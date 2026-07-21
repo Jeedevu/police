@@ -138,7 +138,7 @@ class Settings(BaseSettings):
     CATALYST_QUICKML_MODEL_HOTSPOT: str = ""
 
     # ── Frontend URL (used in email reset links) ──────────────────────────────
-    FRONTEND_URL: str = "http://localhost:5173"
+    # FRONTEND_URL is defined above
 
     # ── Legacy Catalyst fields (backward compat, kept to avoid breakage) ──────
     CATALYST_URL: str = ""
