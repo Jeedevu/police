@@ -90,24 +90,21 @@ class CatalystAuthBridge:
 
     def verify(self, raw_token: str) -> Optional[OfficerClaims]:
         """
-        Verify a Bearer token using either Catalyst Auth or JWT.
+        Verify a Bearer token using standard JWT or Catalyst Auth fallback.
 
         Verification order:
-          1. Catalyst Auth token (if Catalyst is configured)
-          2. Existing JWT (always available as fallback)
-
-        Parameters
-        ----------
-        raw_token:
-            The raw Bearer token string from the Authorization header
-            (without the "Bearer " prefix).
-
-        Returns
-        -------
-        OfficerClaims or None
-            None if both verification paths fail.
+          1. Existing JWT (instant primary verification path)
+          2. Catalyst Auth token (optional fallback)
         """
-        # ── Path 1: Catalyst Auth ──────────────────────────────────────────
+        # ── Path 1: Primary JWT Verification ──────────────────────────────
+        jwt_claims = self._verify_via_jwt(raw_token)
+        if jwt_claims:
+            logger.debug(
+                "Token verified via JWT: officer_id=%s", jwt_claims.officer_id
+            )
+            return jwt_claims
+
+        # ── Path 2: Optional Catalyst Auth Fallback ────────────────────────
         catalyst_claims = self._verify_via_catalyst(raw_token)
         if catalyst_claims:
             logger.debug(
@@ -116,15 +113,7 @@ class CatalystAuthBridge:
             )
             return catalyst_claims
 
-        # ── Path 2: Existing JWT ───────────────────────────────────────────
-        jwt_claims = self._verify_via_jwt(raw_token)
-        if jwt_claims:
-            logger.debug(
-                "Token verified via JWT: officer_id=%s", jwt_claims.officer_id
-            )
-            return jwt_claims
-
-        logger.warning("Token verification failed via both Catalyst Auth and JWT")
+        logger.warning("Token verification failed via JWT and Catalyst Auth")
         return None
 
     # ── Catalyst verification ──────────────────────────────────────────────
