@@ -103,15 +103,17 @@ def refresh_token(request: RefreshRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/logout")
-def logout(officer: Officer = Depends(require_officer)):
-    """Logout — client should discard stored tokens; Catalyst Cache session is invalidated."""
-    logger.info(f"Officer {officer.badge_number} logged out")
-    # Invalidate Catalyst Cache session (non-fatal if Catalyst not configured)
-    try:
-        from app.catalyst.auth_bridge import auth_bridge
-        auth_bridge.invalidate_session(officer.id)
-    except Exception as exc:
-        logger.debug("Session cache invalidation failed (non-fatal): %s", exc)
+def logout(officer: Optional[Officer] = Depends(get_current_officer)):
+    """Logout — client should discard stored tokens; Catalyst Cache session is invalidated if available."""
+    if officer:
+        logger.info(f"Officer {officer.badge_number} logged out")
+        try:
+            from app.catalyst.auth_bridge import auth_bridge
+            auth_bridge.invalidate_session(officer.id)
+        except Exception as exc:
+            logger.debug("Session cache invalidation failed (non-fatal): %s", exc)
+    else:
+        logger.info("Logout request processed for unauthenticated/expired session")
     return {"message": "Logged out successfully"}
 
 

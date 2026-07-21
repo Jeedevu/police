@@ -18,6 +18,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.core.settings import settings
 from app.database.connection import create_tables
@@ -202,17 +203,40 @@ def root():
 
 @app.get("/health", tags=["System"])
 def health():
-    return {"status": "healthy", "version": settings.APP_VERSION}
+    db_connected = False
+    try:
+        from app.database.connection import SessionLocal
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_connected = True
+    except Exception:
+        db_connected = False
+
+    from app.catalyst.config import is_catalyst_available
+
+    return {
+        "status": "healthy" if db_connected else "degraded",
+        "version": settings.APP_VERSION,
+        "backend": "connected",
+        "database": "connected" if db_connected else "disconnected",
+        "gemini": "configured" if bool(settings.effective_gemini_key) else "unconfigured",
+        "catalyst": "connected" if is_catalyst_available() else "unconfigured",
+    }
+
+
+@app.get("/version", tags=["System"])
+def version():
+    return {
+        "version": settings.APP_VERSION,
+        "app": settings.APP_TITLE,
+        "ai_provider": settings.AI_PROVIDER,
+        "environment": "production" if not settings.DEBUG else "development",
+    }
 
 
 @app.get("/api/catalyst/health", tags=["System"])
 def catalyst_health():
-    """
-    Consolidated health check for all 13 Catalyst service wrappers.
-
-    Returns the status and availability of:
-    config, auth, datastore, nosql, filestore, cache, zia,
-    quickml, smartbrowz, signals, mail, scheduler, connections.
-    """
+    """Consolidated health check for all 13 Catalyst service wrappers."""
     from app.catalyst.config import catalyst_health_check
     return catalyst_health_check()

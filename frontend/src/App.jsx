@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Existing pages
+// Pages
 import Dashboard from "./pages/Dashboard";
 import Cases from "./pages/Cases";
 import Analytics from "./pages/Analytics";
@@ -12,7 +12,7 @@ import Network from "./pages/Network";
 import Reports from "./pages/Reports";
 import CriminalProfile from "./pages/CriminalProfile";
 
-// New v2.0 pages
+// v2.0 & v3.0 Pages
 import Login from "./pages/Login";
 import Chat from "./pages/Chat";
 import Officers from "./pages/Officers";
@@ -23,14 +23,22 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* Public Authentication Route */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected routes — wrap with ProtectedRoute for auth */}
+          {/* Protected Application Routes with Granular Permission Guards */}
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute permission="dashboard">
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute permission="dashboard">
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -38,15 +46,31 @@ function App() {
           <Route
             path="/cases"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute permission="cases">
                 <Cases />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cases/:id"
+            element={
+              <ProtectedRoute permission="cases">
+                <Cases />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/evidence"
+            element={
+              <ProtectedRoute permission="evidence">
+                <Evidence />
               </ProtectedRoute>
             }
           />
           <Route
             path="/analytics"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute permission="analytics">
                 <Analytics />
               </ProtectedRoute>
             }
@@ -54,49 +78,15 @@ function App() {
           <Route
             path="/investigation"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute permission="cases">
                 <Investigation />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/search"
-            element={
-              <ProtectedRoute>
-                <Search />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/network"
-            element={
-              <ProtectedRoute>
-                <Network />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/:person_id"
-            element={
-              <ProtectedRoute>
-                <CriminalProfile />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* New v2.0 routes */}
-          <Route
             path="/chat"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute permission="dashboard">
                 <Chat />
               </ProtectedRoute>
             }
@@ -104,19 +94,46 @@ function App() {
           <Route
             path="/officers"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute permission="users">
                 <Officers />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/evidence"
+            path="/search"
             element={
-              <ProtectedRoute>
-                <Evidence />
+              <ProtectedRoute permission="cases">
+                <Search />
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/network"
+            element={
+              <ProtectedRoute permission="analytics">
+                <Network />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute permission="analytics">
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/:person_id"
+            element={
+              <ProtectedRoute permission="cases">
+                <CriminalProfile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fallback redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

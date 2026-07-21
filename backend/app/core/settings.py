@@ -52,8 +52,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # ── CORS — comma-separated extra origins from env ─────────────────────────
-    # e.g. EXTRA_CORS_ORIGINS="https://ksp.vercel.app,https://ksp.com"
+    FRONTEND_URL: str = "https://police-tjrilmgj.onslate.in"
     EXTRA_CORS_ORIGINS: str = ""
 
     CORS_ORIGINS: list[str] = [
@@ -63,12 +62,15 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5174",
         "http://localhost:5175",
         "http://127.0.0.1:5175",
+        "https://police-tjrilmgj.onslate.in",
     ]
 
     @property
     def all_cors_origins(self) -> list[str]:
-        """Merge static origins with dynamic EXTRA_CORS_ORIGINS env var."""
+        """Merge static origins with dynamic FRONTEND_URL and EXTRA_CORS_ORIGINS env vars."""
         extras = [o.strip() for o in self.EXTRA_CORS_ORIGINS.split(",") if o.strip()]
+        if self.FRONTEND_URL and self.FRONTEND_URL not in extras:
+            extras.append(self.FRONTEND_URL.strip())
         return list(set(self.CORS_ORIGINS + extras))
 
     # ── App Meta ──────────────────────────────────────────────────────────────

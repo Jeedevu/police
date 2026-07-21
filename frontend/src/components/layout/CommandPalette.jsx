@@ -36,7 +36,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         .then(res => {
           setDbCases(res.data || []);
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [isOpen]);
 
@@ -87,8 +87,8 @@ export default function CommandPalette({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
@@ -108,7 +108,7 @@ export default function CommandPalette({ isOpen, onClose }) {
               setSelectedIndex(0);
             }}
           />
-          <button 
+          <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 rounded-md p-1 hover:bg-slate-100 transition"
           >
@@ -149,11 +149,10 @@ export default function CommandPalette({ isOpen, onClose }) {
                             item.action();
                             onClose();
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs font-medium transition-all ${
-                            isSelected
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs font-medium transition-all ${isSelected
                               ? "bg-primary/10 text-primary glow-accent"
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             <span className={isSelected ? "text-primary animate-pulse" : "text-slate-400"}>

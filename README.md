@@ -1,314 +1,155 @@
-# 🚨 KSP Crime AI
+# 🚔 KSP Intelligent Crime AI Platform
 
-> Transforming traditional crime record management into an intelligent, AI-assisted investigation ecosystem.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.139.0-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19.2.7-61DAFB?logo=react)](https://react.dev)
+[![Zoho Catalyst](https://img.shields.io/badge/Zoho_Catalyst-AppSail_%26_Hosting-007BE5)](https://catalyst.zoho.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Primary_OLTP-4169E1?logo=postgresql)](https://www.postgresql.org)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-8E44AD?logo=google)](https://ai.google.dev)
 
-## 📌 Overview
-
-**KSP Crime AI** is an AI-powered investigation and crime intelligence platform designed to help law enforcement teams efficiently analyze crime records, manage investigations, and extract actionable insights.
-
-The platform combines **Natural Language AI, intelligent database querying, case management, evidence tracking, analytics, and automated reporting** into a unified system.
-
-Instead of manually searching through large crime databases or writing complex SQL queries, investigators can simply ask questions in natural language and receive meaningful insights instantly.
-
-Example:
-
-> "Show me all repeat offenders involved in vehicle theft cases in Bangalore."
-
-The AI assistant understands the request, generates the required database query, retrieves relevant records, and presents investigation-ready insights.
+An enterprise-grade, AI-powered Crime Intelligence and Investigation Support Platform developed for the **Karnataka State Police (KSP)**.
 
 ---
 
-# 🌟 Key Features
+## 🌐 Live Production Deployments
 
-<table>
-<tr>
-<td width="50%">
-
-## 🤖 AI Investigation Assistant
-
-Transform investigation queries into meaningful insights.
-
-**Capabilities**
-- Natural language crime record search
-- AI-powered SQL query generation
-- Automated investigation insights
-- Conversational database interaction
-
-</td>
-
-<td width="50%">
-
-## 📂 Crime Case Management
-
-Centralized digital management of investigation records.
-
-**Capabilities**
-- Crime case tracking
-- Suspect information management
-- Investigation workflow support
-- Structured record organization
-
-</td>
-</tr>
-
-<tr>
-<td width="50%">
-
-## 🔍 Evidence Intelligence
-
-Simplify evidence organization and investigation analysis.
-
-**Capabilities**
-- Evidence record management
-- Investigation data linking
-- Faster information retrieval
-- AI-assisted analysis support
-
-</td>
-
-<td width="50%">
-
-## 📊 Analytics & Reporting
-
-Convert crime data into actionable intelligence.
-
-**Capabilities**
-- Crime trend visualization
-- Investigation statistics
-- Automated report generation
-- Exportable documentation
-
-</td>
-</tr>
-
-<tr>
-<td colspan="2">
-
-## 🗺️ Interactive Crime Mapping
-
-Visualize crime patterns through location-based intelligence.
-
-**Capabilities**
-- Geographic crime visualization
-- Location-based analysis
-- Pattern identification
-- Map-driven investigation insights
-
-</td>
-</tr>
-
-</table>
+- **Frontend Application**: [https://police-tjrilmgj.onslate.in/](https://police-tjrilmgj.onslate.in/)
+- **Backend API Service (Render)**: [https://police-98i7.onrender.com](https://police-98i7.onrender.com)
+- **Interactive API Documentation (Swagger)**: [https://police-98i7.onrender.com/docs](https://police-98i7.onrender.com/docs)
+- **System Health Check**: [https://police-98i7.onrender.com/health](https://police-98i7.onrender.com/health)
 
 ---
 
-
-## 🏗️ System Architecture
+## 🏗️ Architecture Overview
 
 ```
-                  Investigator
-                       |
-                       ↓
-             React Investigation UI
-                       |
-                       ↓
-                 FastAPI Backend
-                       |
-        ┌──────────────┼──────────────┐
-        ↓              ↓              ↓
- AI Query Engine   PostgreSQL     Analytics
-        |
-        ↓
- Natural Language Processing
-        |
-        ↓
- AI SQL Generation
-        |
-        ↓
- Query Validation
-        |
-        ↓
- Database Execution
-        |
-        ↓
- Investigation Insights
+                      ┌─────────────────────────────────────────────────────────┐
+                      │              React 19 + Vite + TailwindCSS              │
+                      │        (Deployed on Onslate / Catalyst Hosting)         │
+                      └────────────────────────────┬────────────────────────────┘
+                                                   │ HTTPS / Bearer JWT
+                                                   ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                       FastAPI Backend Microservice                                     │
+│                                           (Deployed on Render)                                         │
+│                                                                                                        │
+│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────────┐  │
+│  │   Auth Bridge    │    │ Evidence Repo    │    │ Notification Svc │    │   Conversation Store     │  │
+│  │ (Catalyst + JWT) │    │(FileStore+Zia)   │    │  (Mail + Signals)│    │     (Catalyst NoSQL)     │  │
+│  └────────┬─────────┘    └────────┬─────────┘    └────────┬─────────┘    └────────────┬─────────────┘  │
+└───────────┼───────────────────────┼───────────────────────┼───────────────────────────┼────────────────┘
+            │                       │                       │                           │
+            ▼                       ▼                       ▼                           ▼
+ ┌────────────────────┐   ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────────────┐
+ │   PostgreSQL DB    │   │Catalyst FileStore │   │Catalyst Mail/Signal│  │     Catalyst NoSQL        │
+ │   (Primary OLTP)   │   │(Evidence Assets)  │   │ (Emails + Push)   │   │  (Conversation & Metadata)│
+ └────────────────────┘   └───────────────────┘   └───────────────────┘   └───────────────────────────┘
 ```
 
 ---
 
-## 🧠 AI Workflow
+## 🔐 Role-Based Access Control (RBAC) & Permissions
 
-```
-User Question
-      |
-      ↓
-Natural Language Understanding
-      |
-      ↓
-Database Schema Analysis
-      |
-      ↓
-AI Generated SQL Query
-      |
-      ↓
-SQL Validation & Security Checks
-      |
-      ↓
-PostgreSQL Execution
-      |
-      ↓
-AI-Powered Investigation Response
-```
+The platform enforces a 10-tier rank hierarchy with permission keys:
+
+| Rank / Role | Dashboard | Cases | Evidence | Analytics & AI | Crime Trends | Admin Tools |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Constable** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Head Constable** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Sub Inspector** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Inspector** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **DSP** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **SP / DIG / IGP / DGP**| ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **ADMIN** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
-## 🛠️ Technology Stack
+## ⚡ Quick Start & Local Running
 
-| Category | Technologies |
-|----------|--------------|
-| **Backend** | FastAPI, Python, SQLAlchemy |
-| **Database** | PostgreSQL, psycopg2 |
-| **Frontend** | React 19, Vite, React Router |
-| **UI & Visualization** | Recharts, Leaflet Maps |
-| **Reporting** | jsPDF, html2canvas |
-| **Artificial Intelligence** | Zoho Catalyst QuickML, Google Gemini |
-| **Development Tools** | Git, GitHub, VS Code |
+### 1. Backend Setup (FastAPI)
+```bash
+cd backend
 
----
+# Create & activate virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1   # On Windows
+# source .venv/bin/activate  # On Linux/macOS
 
-## 📁 Project Structure
+# Install dependencies
+pip install -r requirements.txt
 
+# Run database seeder (Populates 100 Officers, 500 FIRs, 300 Cases, 450 Accused, 900 Evidence)
+python scripts/seed_demo.py
+
+# Start local server
+uvicorn app.main:app --reload --port 8000
 ```
-KPS-Crime-AI/
 
-├── backend/
-│   ├── app/
-│   │   ├── api/          # API Routes
-│   │   ├── ai/           # AI Engine & LLM Integration
-│   │   ├── services/     # Business Logic
-│   │   ├── database/     # Database Configuration
-│   │   └── main.py
-│   │
-│   └── requirements.txt
-│
-└── frontend/
-    ├── src/
-    │   ├── pages/
-    │   ├── components/
-    │   └── UI Logic
-    │
-    └── package.json
+### 2. Frontend Setup (React)
+```bash
+cd frontend
+
+# Install npm dependencies
+npm install
+
+# Start Vite development server
+npm run dev
 ```
 
 ---
 
-# 🚀 Getting Started
+## 🔑 Environment Variables Reference
 
-## Prerequisites
-
-<div align="center">
-
-| Requirement | Version |
-|-------------|---------|
-| Python | 3.10+ |
-| Node.js | Latest |
-| PostgreSQL | Latest |
-
-</div>
-
-## Backend Setup
-
-<div align="center">
-
-| Step | Command |
-|------|---------|
-| Navigate | `cd backend` |
-| Create Environment | `python -m venv venv` |
-| Activate | `venv\Scripts\activate` |
-| Install Dependencies | `pip install -r requirements.txt` |
-| Start Server | `uvicorn app.main:app --reload` |
-
-</div>
-
+### Backend (`backend/.env`)
+```env
+PORT=8000
+FRONTEND_URL=https://police-tjrilmgj.onslate.in
+EXTRA_CORS_ORIGINS="https://police-tjrilmgj.onslate.in,http://localhost:5173"
+DATABASE_URL=postgresql://postgres:password@localhost:5432/ksp_crime_ai
+AI_PROVIDER=gemini
+GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
+SECRET_KEY=YOUR_JWT_SECRET_KEY
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
-Backend runs at: http://localhost:8000
+
+### Frontend (`frontend/.env`)
+```env
+VITE_API_URL=https://police-98i7.onrender.com
 ```
 
 ---
 
-## 🎨 Frontend Setup
+## 📊 Demo Seeder Script (`backend/scripts/seed_demo.py`)
 
-<div align="center">
+Run the master seeder script to populate PostgreSQL and Catalyst DataStore/NoSQL collections with realistic Karnataka police records:
 
-| Step | Command |
-|------|---------|
-| Navigate | `cd frontend` |
-| Install Packages | `npm install` |
-| Start Development Server | `npm run dev` |
-
-</div>
-
-```
-Frontend runs at: http://localhost:5173
-
+```bash
+python backend/scripts/seed_demo.py
 ```
 
----
-
-## 🔐 AI Configuration
-
-The platform currently uses: Zoho Catalyst QuickML
-
-AI Pipeline:
-
-```
-User Query
-     ↓
-Catalyst LLM
-     ↓
-SQL Generation
-     ↓
-SQL Validation
-     ↓
-PostgreSQL
-     ↓
-AI Response
-```
-
-Gemini integration is available as an alternative AI provider.
-
----
-## 🔮 Future Roadmap
-
-| Enhancement                 | Description                                                |
-| --------------------------- | ---------------------------------------------------------- |
-| Real-Time Crime Prediction  | Predict potential crime patterns using historical data     |
-| Facial Recognition Support  | Assist identification through image-based analysis         |
-| Advanced Forensic Analytics | Extract deeper insights from forensic records              |
-| Relationship Intelligence   | Discover connections between suspects, cases, and evidence |
-| Role-Based Access Control   | Introduce secure access levels for different users         |
-| Cloud Deployment            | Deploy the platform for scalable real-world usage          |
-| Mobile Investigation App    | Enable field officers to access intelligence remotely      |
-
+**Seeded Data Quota:**
+- 10 Districts & 30 Police Stations
+- 100 Officers (Credentials: `admin@ksp.gov.in` / `Admin@123`, `officer1@ksp.gov.in` / `Officer@123`)
+- 500 FIRs & 300 Active/Solved Cases
+- 450 Accused Persons & Suspects
+- 900 Evidence Items (Images, Videos, Audio, PDFs)
+- 250 Victims & 200 Witnesses
+- 120 Chargesheets & 75 Court Orders
+- 50 Investigation Logs, 100 AI Conversations, 500 Notifications
 
 ---
 
-## 🏆 Project Vision
+## 🛠️ API Endpoint Catalogue
 
-KSP Crime AI aims to bridge the gap between traditional crime record systems and modern artificial intelligence.
-
----
-
-## 👥 Team & Contributions
-
----
-
-## 🎥 Project Demo
-
-Watch the complete walkthrough of KSP Crime AI:
-
----
-
- KSP Crime AI was developed as part of **Datathon 2026 — a Karnataka State Police innovation challenge** 
-
-> ⭐ **Where data meets decisions, and intelligence supports justice.**
-
+| Method | Endpoint | Description | Permission |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Authenticate officer & return JWT tokens | Public |
+| `POST` | `/api/auth/logout` | Discard tokens & invalidate Catalyst session | Public |
+| `GET` | `/health` | Live status for Backend, DB, Gemini & Catalyst | Public |
+| `GET` | `/version` | Environment & version metadata | Public |
+| `GET` | `/api/dashboard/stats` | KPI metrics for total FIRs, cases, wanted, evidence | `dashboard` |
+| `GET` | `/api/cases` | Paginated list of FIRs & cases with jurisdiction filter | `cases` |
+| `GET` | `/api/evidence` | Paginated evidence grid with file previews | `evidence` |
+| `POST` | `/api/evidence/upload` | Catalyst File Store upload & automatic Zia OCR | `evidence` |
+| `POST` | `/api/ai/chat` | Gemini LLM conversation endpoint with streaming | `dashboard` |
+| `GET` | `/api/notifications` | Real-time notifications for active officer | `dashboard` |
