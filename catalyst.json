@@ -1,0 +1,29 @@
+{
+  "project": {
+    "name": "KSP_Crime_AI",
+    "id": "45574000000028001"
+  },
+  "appsail": [
+    {
+      "name": "ksp-crime-ai-backend",
+      "source": "backend"
+    }
+  ],
+  "functions": {
+    "source": "functions",
+    "targets": [
+      "nightly_analytics"
+    ],
+    "ignore": [
+      ".output",
+      "__pycache__"
+    ]
+  },
+  "client": {
+    "source": "frontend",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ]
+  }
+}
