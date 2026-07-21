@@ -12,6 +12,7 @@ Endpoints:
   POST /api/auth/forgot-password
   POST /api/auth/reset-password
   POST /api/auth/register
+  POST /api/auth/seed-demo
 """
 import logging
 from datetime import datetime, timedelta, timezone
@@ -296,3 +297,14 @@ def register_officer(
         ip_address=client_ip
     )
     return _build_officer_out(db, officer)
+
+
+@router.post("/seed-demo")
+def seed_demo_endpoint(current_admin: Officer = Depends(RequireRole("Admin", "ADMIN"))):
+    """Seed demo data (Roles, Permissions, 177 Officers, Cases, Evidence) into PostgreSQL."""
+    try:
+        from scripts.seed_demo import seed_demo_data
+        seed_demo_data()
+        return {"message": "Demo database seeded successfully"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Seeding failed: {exc}")
