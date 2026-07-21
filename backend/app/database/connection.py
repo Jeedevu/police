@@ -41,8 +41,9 @@ from app.models.chargesheet_details import ChargesheetDetails
 from app.models.arrest_surrender import ArrestSurrender
 import os
 
-# Auth models (v2.0) — must be imported before create_all
-from app.auth.models import Officer  # noqa: F401
+# Auth & Security models (v2.0 & v3.0) — must be imported before create_all
+from app.auth.models import Officer, Role, Permission, role_permissions  # noqa: F401
+from app.models.audit_log import AuditLog  # noqa: F401
 
 from app.database.base import Base
 
@@ -68,4 +69,29 @@ def get_db():
         db.close()
 
 def create_tables():
+    from sqlalchemy import text
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        conn.execute(text("""
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS officer_id VARCHAR(50);
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS username VARCHAR(100);
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS rank VARCHAR(50);
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS state VARCHAR(100) DEFAULT 'Karnataka';
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS role_id INTEGER;
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0;
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS account_locked_until TIMESTAMP WITH TIME ZONE;
+            ALTER TABLE officers ADD COLUMN IF NOT EXISTS last_password_change TIMESTAMP WITH TIME ZONE;
+            ALTER TABLE officers ALTER COLUMN hashed_password DROP NOT NULL;
+        """))
+        conn.execute(text("""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='officers' AND column_name='hashed_password') THEN
+                    UPDATE officers SET password_hash = hashed_password WHERE password_hash IS NULL;
+                    UPDATE officers SET hashed_password = password_hash WHERE hashed_password IS NULL;
+                END IF;
+            END $$;
+        """))

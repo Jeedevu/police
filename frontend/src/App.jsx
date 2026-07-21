@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Pages
+// Core Pages
 import Dashboard from "./pages/Dashboard";
 import Cases from "./pages/Cases";
 import Analytics from "./pages/Analytics";
@@ -12,8 +12,11 @@ import Network from "./pages/Network";
 import Reports from "./pages/Reports";
 import CriminalProfile from "./pages/CriminalProfile";
 
-// v2.0 & v3.0 Pages
+// Auth & Security Pages
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ChangePassword from "./pages/ChangePassword";
 import Chat from "./pages/Chat";
 import Officers from "./pages/Officers";
 import Evidence from "./pages/Evidence";
@@ -23,8 +26,10 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Authentication Route */}
+          {/* Public Authentication Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected Application Routes with Granular Permission Guards */}
           <Route
@@ -128,6 +133,24 @@ function App() {
             element={
               <ProtectedRoute permission="cases">
                 <CriminalProfile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Security & Password Settings Route */}
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute permission="dashboard">
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute requiredRole="Admin">
+                <ChangePassword />
               </ProtectedRoute>
             }
           />

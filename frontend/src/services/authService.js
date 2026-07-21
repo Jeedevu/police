@@ -1,18 +1,23 @@
 /**
- * Authentication service — handles login, logout, token management, and local storage state.
+ * Authentication service — handles PostgreSQL + JWT login, logout, token management,
+ * password change, password reset, and role/permission helpers.
  */
 import api, { clearAuthStorage } from "./api";
 
 const authService = {
   /**
-   * Log in officer and store authentication details.
+   * Log in officer with email/username + password and store authentication details.
    */
-  async login(email, password, rememberMe = false) {
-    const { data } = await api.post("/api/auth/login", {
-      email,
+  async login(identifier, password, rememberMe = false) {
+    const isEmail = String(identifier).includes("@");
+    const payload = {
+      email: isEmail ? identifier : null,
+      username: !isEmail ? identifier : null,
       password,
       remember_me: rememberMe,
-    });
+    };
+
+    const { data } = await api.post("/api/auth/login", payload);
 
     const officer = data.officer || {};
     const tokens = data.tokens || {};
@@ -26,12 +31,11 @@ const authService = {
 
     localStorage.setItem("officer", JSON.stringify(officer));
     localStorage.setItem("role", officer.role || "Constable");
-    localStorage.setItem("rank", officer.role || "Constable");
-    localStorage.setItem("station", officer.unit_id ? `Station ${officer.unit_id}` : "HQ");
+    localStorage.setItem("rank", officer.rank || officer.role || "Constable");
+    localStorage.setItem("station", officer.police_station_id ? `Station ${officer.police_station_id}` : "HQ");
     localStorage.setItem("district", officer.district_id ? `District ${officer.district_id}` : "State");
 
-    // Assign permission set based on officer role
-    const permissions = this.getRolePermissions(officer.role);
+    const permissions = officer.permissions || this.getRolePermissions(officer.role);
     localStorage.setItem("permissions", JSON.stringify(permissions));
 
     return data;
@@ -39,21 +43,50 @@ const authService = {
 
   /**
    * Log out officer cleanly.
-   * Clears storage immediately, then attempts background API notification.
    */
   async logout() {
     try {
       await api.post("/api/auth/logout", {}, { _retry: true });
     } catch (err) {
-      // Ignore network / token errors during logout
+      // Ignore network errors on logout
     } finally {
       clearAuthStorage();
     }
   },
 
-  /** Fetch officer profile details */
+  /** Fetch current logged in officer profile */
   async getProfile() {
     const { data } = await api.get("/api/auth/profile");
+    if (data) {
+      localStorage.setItem("officer", JSON.stringify(data));
+      if (data.permissions) {
+        localStorage.setItem("permissions", JSON.stringify(data.permissions));
+      }
+    }
+    return data;
+  },
+
+  /** Change password for logged in officer */
+  async changePassword(currentPassword, newPassword) {
+    const { data } = await api.post("/api/auth/change-password", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+    return data;
+  },
+
+  /** Request password reset link */
+  async forgotPassword(email) {
+    const { data } = await api.post("/api/auth/forgot-password", { email });
+    return data;
+  },
+
+  /** Confirm password reset with token */
+  async resetPassword(token, newPassword) {
+    const { data } = await api.post("/api/auth/reset-password", {
+      token,
+      new_password: newPassword,
+    });
     return data;
   },
 
@@ -110,27 +143,25 @@ const authService = {
     return localStorage.getItem("access_token");
   },
 
-  /** Map officer role to permission set */
+  /** Fallback permission mapper if permissions array is empty */
   getRolePermissions(role = "Constable") {
     const roleLower = String(role).toLowerCase();
+    const perms = ["Dashboard.View", "Cases.Read", "dashboard", "cases"];
 
-    // Default permissions for everyone
-    const perms = ["dashboard", "cases"];
-
-    if (["sub inspector", "inspector", "dsp", "sp", "dig", "igp", "dgp", "admin"].includes(roleLower)) {
-      perms.push("evidence");
+    if (["sub inspector", "si", "inspector", "dsp", "sp", "dig", "igp", "dgp", "admin"].includes(roleLower)) {
+      perms.push("Evidence.Upload", "Evidence.Download", "Evidence.Tag", "evidence");
     }
 
     if (["inspector", "dsp", "sp", "dig", "igp", "dgp", "admin"].includes(roleLower)) {
-      perms.push("analytics", "ai_analytics");
+      perms.push("Analytics.View", "AI.Chat", "AI.GenerateReport", "CrimeMap.View", "analytics", "ai_analytics");
     }
 
-    if (["dsp", "sp", "dig", "igp", "dgp", "admin"].includes(roleLower)) {
-      perms.push("crime_trends");
+    if (["sp", "dig", "igp", "dgp", "admin"].includes(roleLower)) {
+      perms.push("Officers.View", "Officers.Edit", "Investigation.Assign", "Investigation.Close", "users", "crime_trends");
     }
 
     if (roleLower === "admin") {
-      perms.push("users", "system_settings", "audit_logs");
+      perms.push("Users.Create", "Users.Edit", "Users.Delete", "Settings.View", "Settings.Edit", "Audit.View", "Audit.Export", "system_settings", "audit_logs");
     }
 
     return perms;

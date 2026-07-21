@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Search, Bell, Shield, ChevronDown, Check, User, LogOut, Settings, Volume2 } from "lucide-react";
+import { Search, Bell, Shield, ChevronDown, User, LogOut, Settings } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 
 export default function Navbar({ onOpenCommandPalette }) {
+  const { officer, role, rank, logout, station, district } = useAuth();
   const [alerts, setAlerts] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -18,6 +20,9 @@ export default function Navbar({ onOpenCommandPalette }) {
       })
       .catch(() => {});
   }, []);
+
+  const officerName = officer?.full_name || officer?.username || "Officer";
+  const avatarUrl = officer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(officerName)}&background=2563EB&color=fff&bold=true`;
 
   return (
     <header className="bg-white/75 backdrop-blur-md border-b border-slate-150/80 px-6 py-3.5 flex justify-between items-center sticky top-0 z-40">
@@ -120,35 +125,34 @@ export default function Navbar({ onOpenCommandPalette }) {
             className="flex items-center gap-3 p-1.5 pr-3 bg-white border border-slate-200/80 hover:bg-slate-50 rounded-xl transition shadow-sm text-left"
           >
             <img
-              src="https://ui-avatars.com/api/?name=Jeevan+Kumar&background=2563EB&color=fff&bold=true"
+              src={avatarUrl}
               alt="Officer Avatar"
-              className="w-8 h-8 rounded-lg object-cover shadow-sm"
+              className="w-8 h-8 rounded-lg object-cover shadow-sm border border-slate-200"
             />
             <div className="hidden md:block">
-              <p className="text-[11px] font-bold text-slate-800 leading-tight">Insp. Jeevan Kumar</p>
-              <p className="text-[9px] text-slate-400 leading-none mt-0.5">Investigation Officer</p>
+              <p className="text-[11px] font-bold text-slate-800 leading-tight">{officerName}</p>
+              <p className="text-[9px] text-slate-400 leading-none mt-0.5">{rank || role} • {officer?.badge_number || "KSP"}</p>
             </div>
             <ChevronDown size={14} className="text-slate-400 ml-1" />
           </button>
 
           {/* Profile Dropdown Menu */}
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2.5 w-56 bg-white border border-slate-200/80 rounded-2xl shadow-premium glow-accent z-50 p-2 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="absolute right-0 mt-2.5 w-60 bg-white border border-slate-200/80 rounded-2xl shadow-premium glow-accent z-50 p-2 animate-in fade-in slide-in-from-top-3 duration-200">
               <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800">Insp. Jeevan Kumar</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Karnataka State Police HQ</p>
+                <p className="text-xs font-bold text-slate-800">{officerName}</p>
+                <p className="text-[10px] font-medium text-slate-500 mt-0.5">{rank || role} ({officer?.badge_number || "KSP"})</p>
+                <p className="text-[9px] text-slate-400">{station} • {district}</p>
               </div>
               <div className="py-1">
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition">
-                  <User size={15} />
-                  <span>My Profile</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition">
-                  <Settings size={15} />
-                  <span>System Settings</span>
-                </button>
+                <div className="px-3 py-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  Role: <span className="text-primary">{role}</span>
+                </div>
                 <div className="border-t border-slate-100 my-1" />
-                <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-red-600 hover:bg-red-50 transition">
+                <button 
+                  onClick={() => logout()}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-red-600 hover:bg-red-50 transition"
+                >
                   <LogOut size={15} />
                   <span>Logout Session</span>
                 </button>

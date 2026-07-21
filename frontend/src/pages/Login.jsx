@@ -1,6 +1,6 @@
 /**
  * Login page — premium enterprise design for Karnataka State Police.
- * Features: animated background, glassmorphism card, form validation, Remember Me.
+ * Features: PostgreSQL + JWT Auth, animated background, glassmorphic card, form validation, Remember Me.
  */
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
@@ -12,7 +12,7 @@ const ROLE_COLORS = {
   DGP: "#8b5cf6",
   SP: "#3b82f6",
   Inspector: "#10b981",
-  Guest: "#64748b",
+  Constable: "#64748b",
 };
 
 export default function Login() {
@@ -20,7 +20,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -34,12 +34,12 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password, rememberMe);
+      await login(identifier, password, rememberMe);
       navigate(from, { replace: true });
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
-          "Invalid credentials. Please check your email and password."
+          "Invalid credentials or account is locked. Please try again."
       );
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ export default function Login() {
         className="relative w-full max-w-md"
       >
         <div
-          className="rounded-2xl border border-white/10 p-8 shadow-2xl"
+          className="rounded-3xl border border-white/10 p-8 shadow-2xl"
           style={{
             background: "rgba(15, 23, 42, 0.85)",
             backdropFilter: "blur(24px)",
@@ -103,7 +103,7 @@ export default function Login() {
                 KSP Crime Intelligence
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                Karnataka State Police — Secure Portal
+                Karnataka State Police — PostgreSQL + JWT Portal
               </p>
             </motion.div>
           </div>
@@ -115,7 +115,7 @@ export default function Login() {
                 initial={{ opacity: 0, y: -10, height: 0 }}
                 animate={{ opacity: 1, y: 0, height: "auto" }}
                 exit={{ opacity: 0, y: -10, height: 0 }}
-                className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+                className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium leading-relaxed"
               >
                 ⚠️ {error}
               </motion.div>
@@ -124,21 +124,21 @@ export default function Login() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
+            {/* Email or Username */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-                Official Email
+                Email or Officer ID
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
-                  📧
+                  👤
                 </span>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  placeholder="officer@ksp.gov.in"
+                  placeholder="officer@ksp.gov.in or username"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
               </div>
@@ -158,7 +158,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="Enter your password"
+                  placeholder="Enter password"
                   className="w-full pl-10 pr-12 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
                 <button
@@ -213,7 +213,7 @@ export default function Login() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Authenticating…
+                  Authenticating JWT…
                 </span>
               ) : (
                 "Sign In Securely"
@@ -229,34 +229,38 @@ export default function Login() {
             className="mt-6 p-3 rounded-xl bg-white/3 border border-white/5"
           >
             <p className="text-xs text-slate-500 text-center mb-2 font-medium uppercase tracking-wider">
-              Demo Credentials
+              Quick Demo Accounts
             </p>
-            <div className="space-y-1">
+            <div className="grid grid-cols-2 gap-1.5">
               {[
                 { role: "ADMIN", email: "admin@ksp.gov.in", pass: "Admin@123" },
-                { role: "SP", email: "sp@ksp.gov.in", pass: "Officer@123" },
+                { role: "Inspector", email: "jeevan.inspector@ksp.gov.in", pass: "Inspector@123" },
+                { role: "SP", email: "sp1@ksp.gov.in", pass: "SP@123" },
+                { role: "Constable", email: "constable1@ksp.gov.in", pass: "Constable@123" },
               ].map((cred) => (
                 <button
                   key={cred.role}
                   type="button"
                   onClick={() => {
-                    setEmail(cred.email);
+                    setIdentifier(cred.email);
                     setPassword(cred.pass);
                   }}
-                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors group"
+                  className="text-left px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors group border border-white/5"
                 >
-                  <span
-                    className="text-xs font-bold mr-2 px-1.5 py-0.5 rounded"
-                    style={{
-                      background: `${ROLE_COLORS[cred.role]}20`,
-                      color: ROLE_COLORS[cred.role],
-                    }}
-                  >
-                    {cred.role}
-                  </span>
-                  <span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">
+                  <div className="flex justify-between items-center">
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.2 rounded"
+                      style={{
+                        background: `${ROLE_COLORS[cred.role] || "#3b82f6"}20`,
+                        color: ROLE_COLORS[cred.role] || "#3b82f6",
+                      }}
+                    >
+                      {cred.role}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 truncate mt-0.5 group-hover:text-slate-200">
                     {cred.email}
-                  </span>
+                  </p>
                 </button>
               ))}
             </div>

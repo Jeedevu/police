@@ -84,21 +84,6 @@ class NotificationService:
         except Exception as exc:
             logger.warning("Welcome email failed (officer_id=%d): %s", officer_id, exc)
 
-        # Create Catalyst Auth shadow user
-        try:
-            from app.catalyst.auth import CatalystAuthWrapper
-            auth = CatalystAuthWrapper()
-            catalyst_role = "App Admin" if role in ("ADMIN", "DGP") else "App User"
-            auth.create_user(
-                email=officer_email,
-                full_name=officer_name,
-                role_type=catalyst_role,
-            )
-        except Exception as exc:
-            logger.warning(
-                "Catalyst Auth user creation failed (officer_id=%d): %s", officer_id, exc
-            )
-
         # Audit log
         self._log_audit(
             officer_id=officer_id,

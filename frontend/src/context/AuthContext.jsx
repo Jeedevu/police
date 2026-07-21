@@ -1,6 +1,6 @@
 /**
- * AuthContext — global authentication state and role-based access control.
- * Provides current officer, login(), logout(), hasPermission(), hasRole().
+ * AuthContext — global authentication state and enterprise Role-Based Access Control (RBAC).
+ * Provides current officer profile, login(), logout(), hasPermission(), hasRole().
  */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import authService from "../services/authService";
@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Initialize authentication state from localStorage
+  // Restore session from local storage on launch
   useEffect(() => {
     try {
       const storedOfficer = authService.getCurrentOfficer();
@@ -28,10 +28,11 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = useCallback(async (email, password, rememberMe) => {
-    const data = await authService.login(email, password, rememberMe);
+  const login = useCallback(async (identifier, password, rememberMe) => {
+    const data = await authService.login(identifier, password, rememberMe);
     setOfficer(data.officer);
-    setPermissions(authService.getPermissions());
+    const perms = data.officer?.permissions || authService.getPermissions();
+    setPermissions(perms);
     return data;
   }, []);
 
@@ -45,7 +46,9 @@ export function AuthProvider({ children }) {
     try {
       const profile = await authService.getProfile();
       setOfficer(profile);
-      localStorage.setItem("officer", JSON.stringify(profile));
+      if (profile.permissions) {
+        setPermissions(profile.permissions);
+      }
       return profile;
     } catch {
       return null;
@@ -53,20 +56,29 @@ export function AuthProvider({ children }) {
   }, []);
 
   /** Check if officer has a specific permission key */
-  const hasPermission = useCallback((permissionKey) => {
-    if (!permissionKey) return true;
-    if (officer?.role?.toLowerCase() === "admin") return true;
-    const currentPerms = permissions.length > 0 ? permissions : authService.getPermissions();
-    return currentPerms.includes(permissionKey.toLowerCase());
-  }, [officer, permissions]);
+  const hasPermission = useCallback(
+    (permissionKey) => {
+      if (!permissionKey) return true;
+      if (officer?.role?.toLowerCase() === "admin") return true;
+
+      const currentPerms = permissions.length > 0 ? permissions : authService.getPermissions();
+      const keyLower = String(permissionKey).toLowerCase();
+
+      return currentPerms.some((p) => String(p).toLowerCase() === keyLower);
+    },
+    [officer, permissions]
+  );
 
   /** Check if officer role matches allowed roles */
-  const hasRole = useCallback((...allowedRoles) => {
-    if (!officer?.role) return false;
-    if (officer.role.toLowerCase() === "admin") return true;
-    const officerRoleLower = officer.role.toLowerCase();
-    return allowedRoles.some((r) => r.toLowerCase() === officerRoleLower);
-  }, [officer]);
+  const hasRole = useCallback(
+    (...allowedRoles) => {
+      if (!officer?.role) return false;
+      if (officer.role.toLowerCase() === "admin") return true;
+      const officerRoleLower = officer.role.toLowerCase();
+      return allowedRoles.some((r) => r.toLowerCase() === officerRoleLower);
+    },
+    [officer]
+  );
 
   const value = {
     officer,
@@ -78,9 +90,12 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!officer && authService.isAuthenticated(),
     hasPermission,
     hasRole,
-    isAdmin: officer?.role?.toUpperCase() === "ADMIN",
+    isAdmin: officer?.role?.toLowerCase() === "admin",
     role: officer?.role || "Constable",
-    badgeNumber: officer?.badge_number || "KSP-001",
+    rank: officer?.rank || officer?.role || "Constable",
+    badgeNumber: officer?.badge_number || officer?.officer_id || "KSP-001",
+    station: officer?.police_station_id ? `Station #${officer.police_station_id}` : "Central HQ",
+    district: officer?.district_id ? `District #${officer.district_id}` : "State HQ",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

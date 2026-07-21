@@ -1,11 +1,11 @@
 /**
  * Centralized Axios API client for KSP Crime AI Platform.
- * Supports VITE_API_URL, dynamic JWT bearer attachment, auto token refresh,
- * and robust error handling (401, 403, 500, network error).
+ * Supports VITE_API_URL, dynamic JWT Bearer token attachment,
+ * automatic token refresh, and robust error handling.
  */
 import axios from "axios";
 
-// Primary API Base URL from environment, with fallback to production Render backend
+// Primary API Base URL from environment, with fallback to Render production backend
 const rawUrl = import.meta.env.VITE_API_URL || "https://police-98i7.onrender.com";
 export const API_BASE = rawUrl.replace(/\/+$/, ""); // Trim trailing slashes
 
@@ -35,10 +35,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip retry logic for logout or authentication endpoints to prevent infinite loops
+    // Skip retry logic for logout or login endpoints to prevent infinite loops
     if (
-      originalRequest?.url?.includes("/logout") ||
-      originalRequest?.url?.includes("/login")
+      originalRequest?.url?.includes("/auth/logout") ||
+      originalRequest?.url?.includes("/auth/login") ||
+      originalRequest?.url?.includes("/auth/refresh")
     ) {
       return Promise.reject(error);
     }
@@ -63,24 +64,24 @@ api.interceptors.response.use(
             return api(originalRequest);
           }
         } catch (refreshErr) {
-          console.warn("Token refresh failed. Logging out user.", refreshErr);
+          console.warn("Token refresh failed. Redirecting to login.", refreshErr);
           clearAuthStorage();
           if (window.location.pathname !== "/login") {
-            window.location.href = "/login";
+            window.location.href = "/login?reason=session_expired";
           }
           return Promise.reject(refreshErr);
         }
       } else {
         clearAuthStorage();
         if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
+          window.location.href = "/login?reason=unauthorized";
         }
       }
     }
 
     // Handle 403 Forbidden
     if (error.response?.status === 403) {
-      console.error("Permission denied for action:", originalRequest?.url);
+      console.error("Permission denied for requested action:", originalRequest?.url);
     }
 
     // Handle 500 Internal Server Error

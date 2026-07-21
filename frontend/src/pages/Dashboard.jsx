@@ -21,6 +21,7 @@ import {
 import Layout from "../components/layout/Layout";
 import StatsCard from "../components/dashboard/StatsCard";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -93,6 +94,11 @@ export default function Dashboard() {
 
   const COLORS = ["#3B82F6", "#06B6D4", "#10B981", "#EF4444", "#8B5CF6", "#F59E0B"];
 
+  const { officer, rank, role, badgeNumber, station, district } = useAuth();
+  const officerName = officer?.full_name || "Officer";
+  const avatarUrl = officer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(officerName)}&background=2563EB&color=fff&bold=true`;
+  const lastLoginStr = officer?.last_login ? new Date(officer.last_login).toLocaleString() : "Active Session";
+
   if (loading) {
     return (
       <Layout>
@@ -120,18 +126,25 @@ export default function Dashboard() {
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-400 via-blue-500 to-indigo-600"></div>
           <div className="absolute right-0 top-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
 
-          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white border border-white/15 text-[10px] font-bold tracking-wider uppercase mb-3">
-                <Sparkles size={11} className="text-cyan-400 animate-pulse" />
-                <span>AI-ASSISTED DECISION ROOM</span>
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <img
+                src={avatarUrl}
+                alt="Officer Avatar"
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-xl shrink-0"
+              />
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white border border-white/15 text-[10px] font-bold tracking-wider uppercase mb-2">
+                  <Sparkles size={11} className="text-cyan-400 animate-pulse" />
+                  <span>{rank || role || "Officer"} • BADGE: {badgeNumber}</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+                  {greeting}, {rank} {officerName}
+                </h1>
+                <p className="text-slate-300 text-xs md:text-sm mt-1 font-medium leading-relaxed">
+                  Jurisdiction: <span className="text-cyan-300 font-bold">{station}</span> ({district}) • Last Login: <span className="text-slate-200">{lastLoginStr}</span>
+                </p>
               </div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-                {greeting}, Inspector Jeevan
-              </h1>
-              <p className="text-slate-300 text-xs md:text-sm mt-1.5 font-medium max-w-xl leading-relaxed">
-                Crime index indicates an optimal response time of <span className="text-cyan-300 font-bold">1.2m</span> this hour. Intelligence systems are online and mapping active investigations.
-              </p>
             </div>
             
             <div className="flex gap-2">

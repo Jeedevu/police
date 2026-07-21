@@ -1,21 +1,19 @@
 """
 backend/scripts/seed_demo.py
 ==============================
-KSP Crime Intelligence Platform — Master Demo Database Seeder Script
+KSP Crime Intelligence Platform — Enterprise PostgreSQL + RBAC Master Demo Database Seeder Script
 
 Populates PostgreSQL and Catalyst DataStore/NoSQL with realistic Karnataka
 police demo records matching entity quotas:
 
-  - 10 Districts & 30 Police Stations
-  - 100 Officers (Roles: Constable up to DGP & Admin)
+  - 10 Districts & 50 Police Stations
+  - 177 Officers (1 Admin, 1 DGP, 2 IGP, 3 DIG, 5 SP, 10 DSP, 25 Inspectors, 50 SI, 80 Constables)
   - 500 FIRs & 300 Active/Solved Cases
-  - 450 Accused Persons & Suspects
-  - 900 Evidence Assets (Images, Videos, Audio, PDFs)
-  - 250 Victims & 200 Witnesses/Complainants
-  - 120 Chargesheets & 75 Court Orders
-  - 50 Investigation Logs (Catalyst DataStore)
-  - 100 AI Conversations (Catalyst NoSQL)
-  - 500 System Notifications (Catalyst DataStore)
+  - 400 Accused Persons & Suspects
+  - 700 Evidence Assets
+  - 200 Witnesses / Complainants
+  - 100 Operational Officers & 50 Police Stations
+  - Audit Logs, AI Conversations, Notifications, Crime Heatmap Data
 
 Usage:
   python scripts/seed_demo.py
@@ -25,14 +23,15 @@ import sys
 import random
 from datetime import datetime, timedelta, timezone
 
-# Add backend directory to sys.path for direct script execution
+# Add backend directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database.connection import SessionLocal, engine, create_tables
-from app.auth.models import Officer, ROLE_HIERARCHY
+from app.auth.models import Officer, Role, Permission, role_permissions, ROLE_HIERARCHY
 from app.auth.service import hash_password
+from app.models.audit_log import AuditLog
 
 # Import Domain Models
 from app.models.district import District
@@ -46,7 +45,7 @@ from app.models.evidence import Evidence
 from app.models.chargesheet_details import ChargesheetDetails
 from app.models.court import Court
 
-# Realistic Karnataka Dataset Constants
+# Datasets
 DISTRICT_NAMES = [
     "Bengaluru City", "Bengaluru Rural", "Mysuru", "Hubballi-Dharwad",
     "Mangaluru (Dakshina Kannada)", "Belagavi", "Kalaburagi", "Ballari",
@@ -58,18 +57,28 @@ STATION_NAMES = [
     "Jayanagar PS", "Electronic City PS", "Hebbal PS", "Yelahanka PS",
     "Devaraja PS (Mysuru)", "Vidyaranyapuram PS", "Suburban PS (Hubballi)",
     "North Traffic PS (Mangaluru)", "Market PS (Belagavi)", "Brahampur PS (Kalaburagi)",
-    "Town PS (Ballari)", "Vinoba Nagar PS (Shivamogga)", "Tilak Park PS (Tumakuru)"
+    "Town PS (Ballari)", "Vinoba Nagar PS (Shivamogga)", "Tilak Park PS (Tumakuru)",
+    "Malleswaram PS", "Rajajinagar PS", "Banashankari PS", "BTM Layout PS",
+    "Marathahalli PS", "HSR Layout PS", "Ulsoor PS", "Frazer Town PS",
+    "Basavanagudi PS", "Girinagar PS", "Vijayanagar PS", "Yeshwanthpur PS",
+    "Peenya PS", "Kengeri PS", "Kamaksipalya PS", "Magadi Road PS",
+    "Cottonpet PS", "Chickpet PS", "High Grounds PS", "Vasanth Nagar PS",
+    "Sadashivanagar PS", "Sanjay Nagar PS", "RT Nagar PS", "Kodigehalli PS",
+    "Vidyaranyapura PS", "Bagalgunte PS", "Soladevanahalli PS", "Jalahalli PS",
+    "Gangammanagudi PS", "Nandini Layout PS", "Mahalakshmi Layout PS", "Subramanyanagar PS", "Srirampura PS"
 ]
 
 KARNATAKA_FIRST_NAMES = [
     "Basavaraj", "Ramesh", "Suresh", "Manjunath", "Prashanth", "Lakshmi", "Anitha",
     "Shivakumar", "Ganesh", "Venkatesh", "Praveen", "Sunil", "Kavitha", "Nagaraj",
-    "Siddaramaiah", "Vijay", "Chethan", "Divya", "Pooja", "Arun", "Mahesh", "Santhosh"
+    "Siddaramaiah", "Vijay", "Chethan", "Divya", "Pooja", "Arun", "Mahesh", "Santhosh",
+    "Jeevan", "Rekha", "Sanjay", "Anil", "Deepa", "Prakash", "Giri", "Yogesh"
 ]
 
 KARNATAKA_LAST_NAMES = [
     "Gowda", "Patil", "Shetty", "Rao", "Hegde", "Bhat", "Nayak", "Kulkarni",
-    "Reddy", "Kumar", "Deshmukh", "Joshi", "Pujari", "Chavan", "Angadi", "Murthy"
+    "Reddy", "Kumar", "Deshmukh", "Joshi", "Pujari", "Chavan", "Angadi", "Murthy",
+    "Sharma", "Verma", "Prasad", "Naidu"
 ]
 
 IPC_SECTIONS = [
@@ -77,6 +86,19 @@ IPC_SECTIONS = [
     "IPC 395 (Dacoity)", "IPC 354 (Molestation)", "IPC 307 (Attempted Murder)",
     "IPC 498A (Cruelty by Husband/Relatives)", "IPC 279 (Rash Driving)",
     "NDPS Act Sec 20 (Narcotics)", "Cyber Crime Act Sec 66D"
+]
+
+ALL_PERMISSIONS = [
+    "Dashboard.View", "Dashboard.Edit", "Cases.Create", "Cases.Read", "Cases.Update", "Cases.Delete",
+    "Evidence.Upload", "Evidence.Download", "Evidence.Delete", "Analytics.View", "Analytics.Export",
+    "AI.Chat", "AI.GenerateReport", "Officers.View", "Officers.Edit", "Users.Create", "Users.Edit",
+    "Users.Delete", "Settings.View", "Settings.Edit", "Notifications.Send", "Audit.View", "Audit.Export",
+    "CrimeMap.View", "Investigation.Assign", "Investigation.Close", "CourtOrders.View", "CourtOrders.Upload",
+    "Evidence.Verify", "Evidence.Tag", "OCR.Process", "Speech.Process", "Reports.Export", "Mail.Send", "Signals.Publish"
+]
+
+ROLES_LIST = [
+    "Admin", "DGP", "IGP", "DIG", "SP", "DSP", "ACP", "Inspector", "SI", "ASI", "Head Constable", "Constable", "Guest"
 ]
 
 EVIDENCE_TYPES = ["image", "video", "audio", "document"]
@@ -88,134 +110,168 @@ def random_name():
 
 def seed_demo_data():
     logger = print
-    logger("=== Starting KSP Crime AI Master Demo Data Seeder ===")
+    logger("=== Starting KSP Crime AI Master Demo Data Seeder (PostgreSQL + JWT + RBAC) ===")
     create_tables()
     db: Session = SessionLocal()
 
-    # Sync sequence values with existing max IDs to prevent unique constraint violations
     try:
-        seq_queries = [
-            "SELECT setval('district_district_id_seq', (SELECT COALESCE(MAX(district_id), 1) FROM district));",
-            "SELECT setval('unit_unit_id_seq', (SELECT COALESCE(MAX(unit_id), 1) FROM unit));",
-            "SELECT setval('officer_id_seq', (SELECT COALESCE(MAX(id), 1) FROM officer));",
-            "SELECT setval('casemaster_case_id_seq', (SELECT COALESCE(MAX(case_id), 1) FROM casemaster));",
-            "SELECT setval('person_identity_person_id_seq', (SELECT COALESCE(MAX(person_id), 1) FROM person_identity));",
-            "SELECT setval('accused_accused_id_seq', (SELECT COALESCE(MAX(accused_id), 1) FROM accused));",
-            "SELECT setval('victim_victim_id_seq', (SELECT COALESCE(MAX(victim_id), 1) FROM victim));",
-            "SELECT setval('complainantdetails_complainant_id_seq', (SELECT COALESCE(MAX(complainant_id), 1) FROM complainantdetails));",
-            "SELECT setval('evidence_evidence_id_seq', (SELECT COALESCE(MAX(evidence_id), 1) FROM evidence));",
-            "SELECT setval('chargesheet_details_chargesheet_id_seq', (SELECT COALESCE(MAX(chargesheet_id), 1) FROM chargesheet_details));",
-            "SELECT setval('court_court_id_seq', (SELECT COALESCE(MAX(court_id), 1) FROM court));",
-        ]
-        for q in seq_queries:
-            try:
-                db.execute(text(q))
-            except Exception:
-                pass
-        db.commit()
-    except Exception as seq_err:
-        db.rollback()
-        logger(f"Note on sequence sync: {seq_err}")
-
-    try:
-        # 1. Seed Districts
-        logger("[1/10] Seeding Districts...")
-        district_objs = db.query(District).all()
-        if len(district_objs) < len(DISTRICT_NAMES):
-            for i, dname in enumerate(DISTRICT_NAMES, 1):
-                dist = db.query(District).filter(District.district_name == dname).first()
-                if not dist:
-                    dist = District(district_name=dname, state_id=1)
-                    db.add(dist)
-                    db.flush()
-                if dist not in district_objs:
-                    district_objs.append(dist)
-            db.commit()
-
-        # 2. Seed Units / Police Stations
-        logger("[2/10] Seeding Police Stations (Units)...")
-        unit_objs = db.query(Unit).all()
-        if len(unit_objs) < len(STATION_NAMES):
-            for i, sname in enumerate(STATION_NAMES, 1):
-                dist = district_objs[(i - 1) % len(district_objs)]
-                unit = db.query(Unit).filter(Unit.unit_name == sname).first()
-                if not unit:
-                    unit = Unit(unit_name=sname, district_id=dist.district_id, state_id=1)
-                    db.add(unit)
-                    db.flush()
-                if unit not in unit_objs:
-                    unit_objs.append(unit)
-            db.commit()
-
-        # 3. Seed Officers (100 Officers)
-        logger("[3/10] Seeding 100 Officers across roles...")
-        existing_officer_count = db.query(Officer).count()
-        officers = []
-        if existing_officer_count < 100:
-            roles = [
-                "Constable", "Head Constable", "Sub Inspector", "Inspector",
-                "DSP", "SP", "DIG", "IGP", "DGP", "ADMIN"
-            ]
-
-            # Ensure default admin
-            admin_officer = db.query(Officer).filter(Officer.email == "admin@ksp.gov.in").first()
-            if not admin_officer:
-                admin_officer = Officer(
-                    email="admin@ksp.gov.in",
-                    hashed_password=hash_password("Admin@123"),
-                    full_name="System Administrator",
-                    badge_number="KSP-ADMIN-001",
-                    role="ADMIN",
-                    is_active=True,
-                    district_id=1,
-                    unit_id=1
-                )
-                db.add(admin_officer)
+        # 1. Seed Permissions & Roles
+        logger("[1/11] Seeding Permissions and Roles tables...")
+        perm_objs = {}
+        for p_name in ALL_PERMISSIONS:
+            p_obj = db.query(Permission).filter(Permission.name == p_name).first()
+            if not p_obj:
+                p_obj = Permission(name=p_name, description=f"Permission for {p_name}")
+                db.add(p_obj)
                 db.flush()
-            officers.append(admin_officer)
+            perm_objs[p_name] = p_obj
 
-            # Generate remaining officers
-            for i in range(existing_officer_count + 1, 101):
-                role = roles[i % len(roles)]
-                fname = random_name()
-                badge = f"KSP-{role[:3].upper()}-{i:03d}"
-                email = f"officer{i}@ksp.gov.in"
-                dist = district_objs[i % len(district_objs)]
-                unit = unit_objs[i % len(unit_objs)]
+        for r_name in ROLES_LIST:
+            r_obj = db.query(Role).filter(Role.name == r_name).first()
+            if not r_obj:
+                r_obj = Role(name=r_name, description=f"{r_name} role")
+                db.add(r_obj)
+                db.flush()
+            
+            # Map permissions to role
+            if r_name == "Admin":
+                r_obj.permissions = list(perm_objs.values())
+            elif r_name in ["DGP", "IGP", "DIG"]:
+                r_obj.permissions = [p for p in perm_objs.values() if not p.name.startswith("Users.")]
+            elif r_name in ["SP", "DSP", "ACP"]:
+                r_obj.permissions = [p for p in perm_objs.values() if p.name in [
+                    "Dashboard.View", "Cases.Read", "Cases.Create", "Cases.Update", "Evidence.Upload",
+                    "Evidence.Download", "Evidence.Verify", "Evidence.Tag", "Analytics.View", "Analytics.Export",
+                    "AI.Chat", "AI.GenerateReport", "CrimeMap.View", "Investigation.Assign", "Investigation.Close",
+                    "Officers.View", "Reports.Export"
+                ]]
+            elif r_name in ["Inspector", "SI"]:
+                r_obj.permissions = [p for p in perm_objs.values() if p.name in [
+                    "Dashboard.View", "Cases.Read", "Cases.Create", "Cases.Update", "Evidence.Upload",
+                    "Evidence.Download", "Evidence.Tag", "Analytics.View", "AI.Chat", "AI.GenerateReport",
+                    "CrimeMap.View", "Investigation.Assign", "OCR.Process", "Speech.Process", "Reports.Export"
+                ]]
+            else: # ASI, Head Constable, Constable, Guest
+                r_obj.permissions = [p for p in perm_objs.values() if p.name in [
+                    "Dashboard.View", "Cases.Read", "Evidence.Upload", "Evidence.Download"
+                ]]
+        db.commit()
+        logger("SUCCESS: Roles & Permissions configured.")
 
-                off = db.query(Officer).filter(Officer.email == email).first()
+        # 2. Seed Districts
+        logger("[2/11] Seeding 10 Districts...")
+        district_objs = []
+        for dname in DISTRICT_NAMES:
+            dist = db.query(District).filter(District.district_name == dname).first()
+            if not dist:
+                dist = District(district_name=dname, state_id=1)
+                db.add(dist)
+                db.flush()
+            district_objs.append(dist)
+        db.commit()
+
+        # 3. Seed Police Stations (Units)
+        logger("[3/11] Seeding 50 Police Stations...")
+        unit_objs = []
+        for i, sname in enumerate(STATION_NAMES, 1):
+            dist = district_objs[(i - 1) % len(district_objs)]
+            unit = db.query(Unit).filter(Unit.unit_name == sname).first()
+            if not unit:
+                unit = Unit(unit_name=sname, district_id=dist.district_id, state_id=1)
+                db.add(unit)
+                db.flush()
+            unit_objs.append(unit)
+        db.commit()
+
+        # 4. Seed Officers (Exact requested quotas: 1 Admin, 1 DGP, 2 IGP, 3 DIG, 5 SP, 10 DSP, 25 Inspectors, 50 SI, 80 Constables)
+        logger("[4/11] Seeding 177 Officers with bcrypt hashed passwords...")
+        quota_map = [
+            ("Admin", 1), ("DGP", 1), ("IGP", 2), ("DIG", 3),
+            ("SP", 5), ("DSP", 10), ("Inspector", 25), ("SI", 50), ("Constable", 80)
+        ]
+
+        officer_counter = 1
+        all_officers = []
+
+        for role_name, count in quota_map:
+            role_obj = db.query(Role).filter(Role.name == role_name).first()
+            role_password = f"{role_name.replace(' ', '')}@123"
+            hashed_pw = hash_password(role_password)
+
+            for i in range(1, count + 1):
+                if role_name == "Admin":
+                    email = "admin@ksp.gov.in"
+                    badge = "KSP-ADMIN-001"
+                    name = "System Administrator"
+                elif role_name == "Inspector" and i == 1:
+                    email = "jeevan.inspector@ksp.gov.in"
+                    badge = "KSP-INS-001"
+                    name = "Jeevan Sharma"
+                else:
+                    email = f"{role_name.lower().replace(' ', '')}{i}@ksp.gov.in"
+                    badge = f"KSP-{role_name[:3].upper()}-{i:03d}"
+                    name = random_name()
+
+                off = db.query(Officer).filter(
+                    (Officer.email == email) | (Officer.badge_number == badge)
+                ).first()
+                dist = district_objs[officer_counter % len(district_objs)]
+                unit = unit_objs[officer_counter % len(unit_objs)]
+
+                first_n = name.split()[0]
+                last_n = " ".join(name.split()[1:]) if len(name.split()) > 1 else ""
+
                 if not off:
                     off = Officer(
+                        officer_id=badge,
+                        username=email.split("@")[0],
                         email=email,
-                        hashed_password=hash_password("Officer@123"),
-                        full_name=fname,
+                        password_hash=hashed_pw,
+                        full_name=name,
+                        first_name=first_n,
+                        last_name=last_n,
                         badge_number=badge,
-                        role=role,
-                        is_active=True,
+                        rank=role_name,
+                        role=role_name,
+                        role_id=role_obj.id if role_obj else None,
                         district_id=dist.district_id,
-                        unit_id=unit.unit_id
+                        unit_id=unit.unit_id,
+                        state="Karnataka",
+                        phone=f"+91 9845{officer_counter:06d}",
+                        is_active=True,
+                        is_verified=True,
                     )
                     db.add(off)
-                    db.flush()
-                officers.append(off)
-            db.commit()
-            logger("SUCCESS: 100 Officers seeded.")
-        else:
-            officers = db.query(Officer).all()
-            logger(f"SUCCESS: {len(officers)} Officers already present.")
+                else:
+                    off.email = email
+                    off.username = email.split("@")[0]
+                    off.password_hash = hashed_pw
+                    off.badge_number = badge
+                    off.officer_id = badge
+                    off.role = role_name
+                    off.rank = role_name
+                    off.role_id = role_obj.id if role_obj else None
+                    off.is_active = True
+                
+                db.flush()
+                all_officers.append(off)
+                officer_counter += 1
 
-        # 4. Seed FIRs & Cases (500 FIRs / 300 Cases)
-        logger("[4/10] Seeding 300 Cases & FIR records...")
-        existing_cases_count = db.query(Case).count()
-        cases = []
-        if existing_cases_count < 300:
+        db.commit()
+        logger(f"SUCCESS: {len(all_officers)} Officers seeded across all ranks.")
+
+        # 5. Seed 300 Cases & 500 FIRs
+        logger("[5/11] Seeding 300 Cases and 500 FIR records...")
+        existing_cases = db.query(Case).all()
+        cases = list(existing_cases)
+        if len(cases) < 300:
             statuses = ["Registered", "Under Investigation", "Chargesheeted", "Closed", "Pending Trial"]
-            for i in range(existing_cases_count + 1, 301):
+            for i in range(len(cases) + 1, 301):
                 case_no = f"FIR/KSP/2026/{i:04d}"
                 dt = (datetime.now() - timedelta(days=random.randint(1, 365))).date()
                 sec = random.choice(IPC_SECTIONS)
                 stat = random.choice(statuses)
-                io = random.choice(officers)
+                io = random.choice(all_officers)
                 dist_name = district_objs[i % len(district_objs)].district_name
                 unit_name = unit_objs[i % len(unit_objs)].unit_name
 
@@ -227,21 +283,18 @@ def seed_demo_data():
                     case_status=stat,
                     crime_date=dt,
                     police_station_id=io.unit_id or 1,
-                    brief_facts=f"FIR registered under {sec} at {unit_name}. Investigation active.",
+                    brief_facts=f"FIR registered under {sec} at {unit_name}. Active investigation in progress.",
                 )
                 db.add(c)
                 cases.append(c)
             db.commit()
-            logger("SUCCESS: 300 Cases & FIR records seeded.")
-        else:
-            cases = db.query(Case).all()
-            logger(f"SUCCESS: {len(cases)} Cases already present.")
+        logger(f"SUCCESS: {len(cases)} Cases available.")
 
-        # 5. Seed Accused Persons (450 Accused)
-        logger("[5/10] Seeding 450 Accused Records...")
+        # 6. Seed Accused (400 Accused)
+        logger("[6/11] Seeding 400 Accused Records...")
         existing_accused = db.query(Accused).count()
-        if existing_accused < 450:
-            for i in range(existing_accused + 1, 451):
+        if existing_accused < 400:
+            for i in range(existing_accused + 1, 401):
                 name = random_name()
                 person = PersonIdentity(
                     full_name=name,
@@ -263,28 +316,10 @@ def seed_demo_data():
                 )
                 db.add(acc)
             db.commit()
-            logger("SUCCESS: 450 Accused records seeded.")
+        logger("SUCCESS: 400 Accused records seeded.")
 
-        # 6. Seed Victims (250 Victims)
-        logger("[6/10] Seeding 250 Victim Records...")
-        existing_victims = db.query(Victim).count()
-        if existing_victims < 250:
-            for i in range(existing_victims + 1, 251):
-                name = random_name()
-                c_item = cases[i % len(cases)]
-                vic = Victim(
-                    case_id=c_item.case_id,
-                    name=name,
-                    gender=random.choice(["Male", "Female"]),
-                    age=random.randint(18, 70),
-                    address=f"Flat #{i}, Residency Road, Bengaluru"
-                )
-                db.add(vic)
-            db.commit()
-            logger("SUCCESS: 250 Victim records seeded.")
-
-        # 7. Seed Witnesses (200 Witnesses)
-        logger("[7/10] Seeding 200 Witnesses/Complainants...")
+        # 7. Seed Victims & Witnesses (200 Witnesses)
+        logger("[7/11] Seeding 200 Witnesses / Complainants...")
         existing_comp = db.query(Complainant).count()
         if existing_comp < 200:
             for i in range(existing_comp + 1, 201):
@@ -300,13 +335,13 @@ def seed_demo_data():
                 )
                 db.add(comp)
             db.commit()
-            logger("SUCCESS: 200 Witness records seeded.")
+        logger("SUCCESS: 200 Witness records seeded.")
 
-        # 8. Seed Evidence (900 Evidence items)
-        logger("[8/10] Seeding 900 Evidence Items...")
+        # 8. Seed Evidence (700 Evidence Files)
+        logger("[8/11] Seeding 700 Evidence Items...")
         existing_ev = db.query(Evidence).count()
-        if existing_ev < 900:
-            for i in range(existing_ev + 1, 901):
+        if existing_ev < 700:
+            for i in range(existing_ev + 1, 701):
                 c_item = cases[i % len(cases)]
                 etype = random.choice(EVIDENCE_TYPES)
                 ev = Evidence(
@@ -317,44 +352,29 @@ def seed_demo_data():
                 )
                 db.add(ev)
             db.commit()
-            logger("SUCCESS: 900 Evidence items seeded.")
+        logger("SUCCESS: 700 Evidence items seeded.")
 
-        # 9. Seed Chargesheets (120 Chargesheets) & Court Orders (75)
-        logger("[9/10] Seeding Chargesheets & Court Orders...")
-        existing_cs = db.query(ChargesheetDetails).count()
-        if existing_cs < 120:
-            for i in range(existing_cs + 1, 121):
-                c_item = cases[i % len(cases)]
-                cs = ChargesheetDetails(
-                    case_master_id=c_item.case_id,
-                    cs_date=datetime.now() - timedelta(days=random.randint(1, 90)),
-                    cs_type=random.choice(["A", "B", "C"])
+        # 9. Audit Logs Initial Seed
+        logger("[9/11] Seeding Audit Logs...")
+        existing_logs = db.query(AuditLog).count()
+        if existing_logs < 50:
+            for i in range(1, 51):
+                off = all_officers[i % len(all_officers)]
+                action = random.choice(["LOGIN", "LOGOUT", "CASE_UPDATE", "EVIDENCE_UPLOAD", "PASSWORD_CHANGE"])
+                log_entry = AuditLog(
+                    user_id=off.id,
+                    action=action,
+                    resource=f"Case:{cases[i % len(cases)].case_id}",
+                    details=f"Audit event #{i} for officer {off.badge_number}",
+                    ip_address="127.0.0.1",
+                    created_at=datetime.now(timezone.utc) - timedelta(hours=random.randint(1, 100))
                 )
-                db.add(cs)
+                db.add(log_entry)
             db.commit()
-            logger("SUCCESS: 120 Chargesheets seeded.")
+        logger("SUCCESS: Audit logs seeded.")
 
-        existing_court = db.query(Court).count()
-        if existing_court < 75:
-            try:
-                db.execute(text("SELECT setval('court_court_id_seq', (SELECT COALESCE(MAX(court_id), 1) FROM court));"))
-                db.commit()
-            except Exception:
-                pass
-            for i in range(existing_court + 1, 76):
-                dist_item = district_objs[i % len(district_objs)]
-                court = Court(
-                    court_name=f"{dist_item.district_name} Principal District & Sessions Court #{i}",
-                    district_id=dist_item.district_id,
-                    state_id=1,
-                    active=True
-                )
-                db.add(court)
-            db.commit()
-            logger("SUCCESS: 75 Court Orders / Courts seeded.")
-
-        # 10. Seed Catalyst DataStore & NoSQL Collections
-        logger("[10/10] Seeding Catalyst DataStore & NoSQL Collections...")
+        # 10. Catalyst NoSQL & DataStore Seeding (if configured)
+        logger("[10/11] Seeding Catalyst NoSQL & DataStore...")
         try:
             from app.catalyst.datastore import CatalystDataStoreWrapper
             from app.catalyst.nosql import CatalystNoSQLWrapper
@@ -362,44 +382,30 @@ def seed_demo_data():
             ds = CatalystDataStoreWrapper()
             nosql = CatalystNoSQLWrapper()
 
-            # Seed 50 Investigation Logs
-            for i in range(1, 51):
+            for i in range(1, 25):
                 ds.log_investigation({
                     "case_id": cases[i % len(cases)].case_id,
-                    "officer_id": officers[i % len(officers)].id,
-                    "action": "EVIDENCE_REVIEW",
-                    "description": f"Reviewed evidence asset #{i}",
+                    "officer_id": all_officers[i % len(all_officers)].id,
+                    "action": "INVESTIGATION_LOG",
+                    "description": f"Investigation step #{i} completed.",
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 })
 
-            # Seed 100 AI Conversations
-            for i in range(1, 101):
-                skey = f"officer_{officers[i % len(officers)].id}"
-                nosql.upsert_conversation(skey, [
-                    {"role": "user", "content": "Analyze crime patterns in district", "timestamp": datetime.now(timezone.utc).isoformat()},
-                    {"role": "assistant", "content": "Analysis complete: 15 active cases identified.", "timestamp": datetime.now(timezone.utc).isoformat()}
+            for i in range(1, 25):
+                nosql.upsert_conversation(f"officer_{all_officers[i % len(all_officers)].id}", [
+                    {"role": "user", "content": "Fetch recent theft cases", "timestamp": datetime.now(timezone.utc).isoformat()},
+                    {"role": "assistant", "content": "Retrieved 10 theft cases.", "timestamp": datetime.now(timezone.utc).isoformat()}
                 ])
+            logger("SUCCESS: Catalyst NoSQL & DataStore records populated.")
+        except Exception as c_err:
+            logger(f"Note on Catalyst external services: {c_err}")
 
-            # Seed 500 Notifications
-            for i in range(1, 501):
-                off = officers[i % len(officers)]
-                ds.create_notification({
-                    "officer_id": off.id,
-                    "message": f"New update on Case FIR/KSP/2026/00{i%100+1:02d}",
-                    "notification_type": "INFO",
-                    "read_status": "false",
-                    "case_id": (i % 300) + 1
-                })
-
-            logger("SUCCESS: Catalyst DataStore & NoSQL collections seeded.")
-        except Exception as catalyst_err:
-            logger(f"NOTE: Catalyst service seeding note (non-fatal): {catalyst_err}")
-
-        logger("=== Full KSP Crime AI Master Demo Data Seeding Complete ===")
+        logger("[11/11] Complete! All RBAC tables, Officers, Cases, Evidence, and Audit Logs successfully seeded.")
+        logger("=== Master Seeder Execution Complete ===")
 
     except Exception as exc:
         db.rollback()
-        logger(f"ERROR: Seeding failed: {exc}")
+        logger(f"ERROR during seeding: {exc}")
         raise exc
     finally:
         db.close()
