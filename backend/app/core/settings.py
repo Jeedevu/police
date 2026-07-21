@@ -1,12 +1,6 @@
 """
 Centralized application settings using Pydantic BaseSettings.
 All configuration is loaded from environment variables / .env file.
-
-Railway provides DATABASE_URL as postgres:// — we coerce it to postgresql://.
-
-v3.0 — Added full Catalyst services configuration block.
-        All Catalyst env vars are declared here; they are read by the
-        individual catalyst/* wrapper modules at runtime.
 """
 from functools import lru_cache
 from pathlib import Path
@@ -52,16 +46,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    FRONTEND_URL: str = "https://police-tjrilmgj.onslate.in"
+    FRONTEND_URL: str = "https://police-zspzdnmz.onslate.in"
     EXTRA_CORS_ORIGINS: str = ""
 
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
+        "http://localhost:3000",
         "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5175",
+        "http://127.0.0.1:3000",
+        "https://police-zspzdnmz.onslate.in",
         "https://police-tjrilmgj.onslate.in",
     ]
 
@@ -83,25 +76,15 @@ class Settings(BaseSettings):
         """Return whichever Gemini key is set."""
         return self.GEMINI_API_KEY or self.GOOGLE_API_KEY
 
-    # =========================================================================
-    # ── Catalyst Services Configuration (v3.0) ───────────────────────────────
-    # =========================================================================
-    # Set all CATALYST_* vars in .env (dev) or Catalyst AppSail env vars (prod).
-    # See backend/.env.catalyst.example for the full template.
-    # TODO:CREDENTIALS — populate these before enabling Catalyst services.
+    # ── Catalyst Services Configuration ──────────────────────────────────────
+    CATALYST_PROJECT_ID: str = ""
+    CATALYST_PROJECT_KEY: str = ""
+    CATALYST_CLIENT_ID: str = ""
+    CATALYST_CLIENT_SECRET: str = ""
+    CATALYST_REFRESH_TOKEN: str = ""
+    CATALYST_ENV: str = "development"
+    CATALYST_ORG_ID: str = ""
 
-    # ── Catalyst Core credentials ──────────────────────────────────────────────
-    CATALYST_PROJECT_ID: str = ""      # Found in .catalystrc (already: 45574000000028001)
-    CATALYST_PROJECT_KEY: str = ""     # Catalyst Console → Project → Keys
-    CATALYST_CLIENT_ID: str = ""       # Zoho API Console → OAuth Client ID
-    CATALYST_CLIENT_SECRET: str = ""   # Zoho API Console → OAuth Client Secret
-    CATALYST_REFRESH_TOKEN: str = ""   # Generated via Zoho OAuth flow
-    CATALYST_ENV: str = "development"  # "development" | "production"
-    CATALYST_ORG_ID: str = ""          # Zoho Org ID (optional)
-
-    # ── Catalyst File Store folder IDs ────────────────────────────────────────
-    # Create folders in Catalyst Console → File Store, copy IDs here.
-    # TODO:CREDENTIALS — set all folder IDs
     CATALYST_FILE_STORE_FOLDER_EVIDENCE_IMAGES: str = ""
     CATALYST_FILE_STORE_FOLDER_EVIDENCE_VIDEOS: str = ""
     CATALYST_FILE_STORE_FOLDER_EVIDENCE_AUDIO: str = ""
@@ -115,9 +98,6 @@ class Settings(BaseSettings):
     CATALYST_FILE_STORE_FOLDER_WITNESS: str = ""
     CATALYST_FILE_STORE_FOLDER_MISC: str = ""
 
-    # ── Catalyst Cache segment IDs ────────────────────────────────────────────
-    # Create segments in Catalyst Console → Cache, copy IDs here.
-    # TODO:CREDENTIALS — set all segment IDs
     CATALYST_CACHE_SEGMENT_DASHBOARD: str = ""
     CATALYST_CACHE_SEGMENT_OFFICER: str = ""
     CATALYST_CACHE_SEGMENT_ANALYTICS: str = ""
@@ -126,21 +106,13 @@ class Settings(BaseSettings):
     CATALYST_CACHE_SEGMENT_SESSION: str = ""
     CATALYST_CACHE_SEGMENT_CASES: str = ""
 
-    # ── Catalyst Mail ─────────────────────────────────────────────────────────
-    # TODO:CREDENTIALS — verify sender address in Catalyst Console → Mail
     CATALYST_MAIL_FROM_ADDRESS: str = ""
     CATALYST_MAIL_FROM_NAME: str = "KSP Crime Intelligence Platform"
 
-    # ── Catalyst QuickML model IDs (future) ───────────────────────────────────
-    # TODO:CREDENTIALS (future) — train models in Catalyst Console → QuickML
     CATALYST_QUICKML_MODEL_RECIDIVISM: str = ""
     CATALYST_QUICKML_MODEL_CASETIME: str = ""
     CATALYST_QUICKML_MODEL_HOTSPOT: str = ""
 
-    # ── Frontend URL (used in email reset links) ──────────────────────────────
-    # FRONTEND_URL is defined above
-
-    # ── Legacy Catalyst fields (backward compat, kept to avoid breakage) ──────
     CATALYST_URL: str = ""
     CATALYST_TOKEN: str = ""
     CATALYST_ORG: str = ""
@@ -151,5 +123,4 @@ def get_settings() -> Settings:
     return Settings()
 
 
-# Singleton — import this everywhere
 settings = get_settings()

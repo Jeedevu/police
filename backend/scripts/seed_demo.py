@@ -34,6 +34,7 @@ from app.auth.service import hash_password
 from app.models.audit_log import AuditLog
 
 # Import Domain Models
+from app.models.state import State
 from app.models.district import District
 from app.models.unit import Unit
 from app.models.case import Case
@@ -158,13 +159,20 @@ def seed_demo_data():
         db.commit()
         logger("SUCCESS: Roles & Permissions configured.")
 
-        # 2. Seed Districts
-        logger("[2/11] Seeding 10 Districts...")
+        # 2. Seed State & Districts
+        logger("[2/11] Seeding State and 10 Districts...")
+        state_obj = db.query(State).filter(State.state_name == "Karnataka").first()
+        if not state_obj:
+            state_obj = State(state_name="Karnataka", active=True)
+            db.add(state_obj)
+            db.flush()
+        db.commit()
+
         district_objs = []
         for dname in DISTRICT_NAMES:
             dist = db.query(District).filter(District.district_name == dname).first()
             if not dist:
-                dist = District(district_name=dname, state_id=1)
+                dist = District(district_name=dname, state_id=state_obj.state_id)
                 db.add(dist)
                 db.flush()
             district_objs.append(dist)
@@ -177,7 +185,7 @@ def seed_demo_data():
             dist = district_objs[(i - 1) % len(district_objs)]
             unit = db.query(Unit).filter(Unit.unit_name == sname).first()
             if not unit:
-                unit = Unit(unit_name=sname, district_id=dist.district_id, state_id=1)
+                unit = Unit(unit_name=sname, district_id=dist.district_id, state_id=state_obj.state_id)
                 db.add(unit)
                 db.flush()
             unit_objs.append(unit)
