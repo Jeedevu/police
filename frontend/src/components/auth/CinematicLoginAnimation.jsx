@@ -1,34 +1,55 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 
 export default function CinematicLoginAnimation({ officerName = "Officer", onComplete }) {
+  const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
 
   useEffect(() => {
-    // Determine AM (Morning) vs PM (Evening)
-    const currentHour = new Date().getHours();
-    const isMorning = currentHour < 12;
+    // 1. Play background audio asset
+    const audio = new Audio("/ritu_tts_audio.mp3");
+    audioRef.current = audio;
 
-    // Synthesize Audio Speech Greeting using Web Speech API or local audio file
-    if ("speechSynthesis" in window) {
-      const greetingText = isMorning
-        ? `🙏 ನಮಸ್ಕಾರ. Good Morning ${officerName}. Welcome to Karnataka State Police Intelligence.`
-        : `🙏 ನಮಸ್ಕಾರ. Good Evening ${officerName}. Welcome to Karnataka State Police Intelligence.`;
+    // Listen for progress updates
+    const handleTimeUpdate = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        setProgress(pct);
+      }
+    };
 
-      const utterance = new SpeechSynthesisUtterance(greetingText);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
-    }
+    // Complete animation when audio finishes playing
+    const handleAudioEnded = () => {
+      setProgress(100);
+      setTimeout(() => {
+        if (onComplete) onComplete();
+      }, 400);
+    };
 
-    // Auto-complete after 5 seconds
-    const timer = setTimeout(() => {
-      if (onComplete) onComplete();
-    }, 5000);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleAudioEnded);
 
-    return () => clearTimeout(timer);
-  }, [officerName, onComplete]);
+    audio.play().catch((err) => {
+      console.warn("Audio autoplay prevented by browser policy:", err);
+      // Fallback timer if browser blocks audio autoplay
+      let cur = 0;
+      const interval = setInterval(() => {
+        cur += 5;
+        setProgress(cur);
+        if (cur >= 100) {
+          clearInterval(interval);
+          if (onComplete) onComplete();
+        }
+      }, 250);
+    });
+
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleAudioEnded);
+      audio.pause();
+    };
+  }, [onComplete]);
 
   const currentHour = new Date().getHours();
   const greetingTitle = currentHour < 12 ? "🌅 ಶುಭೋದಯ • Good Morning" : "🌙 ಶುಭ ಸಂಜೆ • Good Evening";
@@ -91,13 +112,11 @@ export default function CinematicLoginAnimation({ officerName = "Officer", onCom
           </p>
         </motion.div>
 
-        {/* Loading Bar */}
+        {/* Audio Progress Bar */}
         <div className="w-64 h-1.5 bg-slate-800 rounded-full mt-8 overflow-hidden relative border border-slate-700">
-          <motion.div
-            initial={{ width: "0%" }}
-            animate={{ width: "100%" }}
-            transition={{ duration: 4.5, ease: "easeInOut" }}
-            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
+          <div
+            style={{ width: `${progress}%` }}
+            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-200"
           />
         </div>
       </div>
