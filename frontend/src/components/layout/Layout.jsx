@@ -32,7 +32,19 @@ export default function Layout({ children }) {
   }, []);
 
   return (
-    <div className="flex h-screen w-screen bg-[#F8FAFC] text-[#0F172A] overflow-hidden font-sans">
+    <div className="flex h-screen w-screen bg-[#08111F] text-[#F8FAFC] overflow-hidden font-sans relative">
+      {/* Ambient background field */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute top-[-15%] left-[20%] w-[600px] h-[600px] rounded-full opacity-[0.05]"
+          style={{ background: "radial-gradient(circle, #2563EB 0%, transparent 70%)" }}
+        />
+        <div
+          className="absolute bottom-[-20%] right-[5%] w-[500px] h-[500px] rounded-full opacity-[0.04]"
+          style={{ background: "radial-gradient(circle, #4F46E5 0%, transparent 70%)" }}
+        />
+      </div>
+
       {/* Collapsible Sidebar */}
       <Sidebar 
         isCollapsed={isSidebarCollapsed} 
@@ -40,12 +52,12 @@ export default function Layout({ children }) {
       />
 
       {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative z-10">
         {/* Top Navbar */}
         <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
 
         {/* Dynamic Page Container */}
-        <main className="flex-1 overflow-auto bg-slate-50/50 p-6 relative">
+        <main className="flex-1 overflow-auto p-6 relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={window.location.pathname} // Triggers animation on route changes
@@ -53,7 +65,7 @@ export default function Layout({ children }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="h-full w-full"
+              className="h-full w-full max-w-[1600px] mx-auto"
             >
               {children}
             </motion.div>

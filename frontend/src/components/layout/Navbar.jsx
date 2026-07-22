@@ -25,30 +25,36 @@ export default function Navbar({ onOpenCommandPalette }) {
   const avatarUrl = officer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(officerName)}&background=2563EB&color=fff&bold=true`;
 
   return (
-    <header className="bg-white/75 backdrop-blur-md border-b border-slate-150/80 px-6 py-3.5 flex justify-between items-center sticky top-0 z-40">
+    <header
+      className="h-[65px] px-6 flex justify-between items-center sticky top-0 z-40 border-b border-white/[0.06]"
+      style={{
+        background: "rgba(8, 17, 31, 0.75)",
+        backdropFilter: "blur(20px)",
+      }}
+    >
       {/* Search Input hotkey trigger */}
       <div className="flex-1 max-w-md">
         <button
           onClick={onOpenCommandPalette}
-          className="w-full flex items-center justify-between bg-slate-100/80 hover:bg-slate-100 hover:border-slate-300 text-slate-400 border border-slate-200/60 rounded-xl px-4 py-2.5 text-xs transition-all shadow-sm"
+          className="w-full flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.05] text-[#64748B] border border-white/[0.07] hover:border-white/[0.12] rounded-xl px-4 py-2.5 text-xs transition-all"
         >
           <div className="flex items-center gap-2.5">
-            <Search size={15} className="text-slate-400" />
-            <span className="font-medium text-slate-500">Search FIR, Suspects, Evidence...</span>
+            <Search size={15} className="text-[#64748B]" />
+            <span className="font-medium text-[#94A3B8]">Search FIR, Suspects, Evidence...</span>
           </div>
-          <kbd className="bg-white border border-slate-200/80 text-[10px] text-slate-500 font-bold px-1.5 py-0.5 rounded shadow-sm">
+          <kbd className="bg-white/[0.05] border border-white/[0.08] text-[9.5px] text-[#94A3B8] font-bold px-1.5 py-0.5 rounded-md">
             Ctrl + K
           </kbd>
         </button>
       </div>
 
       {/* Action utilities */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {/* Active Dispatch audio indicator */}
-        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-sm select-none">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        <div className="hidden lg:flex items-center gap-2 bg-[#10B981]/[0.08] border border-[#10B981]/25 text-[#10B981] px-3 py-2 rounded-xl text-[9.5px] font-bold tracking-wide shadow-sm select-none">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#10B981]"></span>
           </span>
           <span>HQ DISPATCH CONNECTED</span>
         </div>
@@ -63,13 +69,13 @@ export default function Navbar({ onOpenCommandPalette }) {
             }}
             className={`relative p-2.5 rounded-xl border transition-all ${
               showNotifications 
-                ? "bg-slate-100 border-slate-300 text-slate-800" 
-                : "bg-white border-slate-200/80 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                ? "bg-white/[0.06] border-white/[0.14] text-[#F8FAFC]" 
+                : "bg-white/[0.02] border-white/[0.07] text-[#94A3B8] hover:bg-white/[0.05] hover:text-[#F8FAFC]"
             }`}
           >
-            <Bell size={18} />
+            <Bell size={17} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-[9px] font-bold text-white flex items-center justify-center rounded-full ring-2 ring-white">
+              <span className="absolute top-1 right-1 w-4 h-4 bg-[#EF4444] text-[9px] font-bold text-white flex items-center justify-center rounded-full ring-2 ring-[#08111F]">
                 {unreadCount}
               </span>
             )}
@@ -77,36 +83,39 @@ export default function Navbar({ onOpenCommandPalette }) {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2.5 w-80 bg-white border border-slate-200/80 rounded-2xl shadow-premium glow-accent z-50 p-2 animate-in fade-in slide-in-from-top-3 duration-200">
-              <div className="px-3 py-2 border-b border-slate-100 flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-700">Intel Notifications</span>
-                <span className="text-[10px] bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded-full">
+            <div
+              className="absolute right-0 mt-2.5 w-80 rounded-2xl z-50 p-2 border border-white/[0.08] shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200"
+              style={{ background: "#111827", boxShadow: "0 20px 50px -12px rgba(0,0,0,0.6)" }}
+            >
+              <div className="px-3 py-2.5 border-b border-white/[0.06] flex justify-between items-center">
+                <span className="text-xs font-bold text-[#F8FAFC]">Intel Notifications</span>
+                <span className="text-[9.5px] bg-[#EF4444]/10 text-[#EF4444] font-bold px-2 py-0.5 rounded-full">
                   High Risk Alerts
                 </span>
               </div>
-              <div className="py-1 max-h-[280px] overflow-y-auto">
+              <div className="py-1.5 max-h-[280px] overflow-y-auto">
                 {alerts.length > 0 ? (
                   alerts.map((item, idx) => (
                     <div 
                       key={idx} 
-                      className="p-3 hover:bg-slate-50 rounded-xl transition flex gap-3 items-start border border-transparent hover:border-slate-100 mb-1"
+                      className="p-3 hover:bg-white/[0.04] rounded-xl transition flex gap-3 items-start border border-transparent hover:border-white/[0.06] mb-1"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#EF4444]/10 flex items-center justify-center text-[#EF4444] shrink-0 mt-0.5">
                         <Shield size={16} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center">
-                          <p className="text-xs font-bold text-slate-800 truncate">{item.full_name}</p>
-                          <span className="text-[9px] bg-red-100 text-red-700 font-black px-1.5 py-0.2 rounded-full">
+                        <div className="flex justify-between items-center gap-2">
+                          <p className="text-xs font-bold text-[#F8FAFC] truncate">{item.full_name}</p>
+                          <span className="text-[9px] bg-[#EF4444]/15 text-[#F87171] font-black px-1.5 py-0.5 rounded-full shrink-0">
                             {item.risk_score}%
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">High-risk suspect active in {item.mobile ? "cell grid tracking" : "dossier database"}</p>
+                        <p className="text-[10px] text-[#64748B] truncate mt-0.5">High-risk suspect active in {item.mobile ? "cell grid tracking" : "dossier database"}</p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="py-6 text-center text-xs text-slate-400">
+                  <div className="py-6 text-center text-xs text-[#64748B]">
                     No active high-risk alerts.
                   </div>
                 )}
@@ -122,36 +131,39 @@ export default function Navbar({ onOpenCommandPalette }) {
               setShowProfileMenu(!showProfileMenu);
               setShowNotifications(false);
             }}
-            className="flex items-center gap-3 p-1.5 pr-3 bg-white border border-slate-200/80 hover:bg-slate-50 rounded-xl transition shadow-sm text-left"
+            className="flex items-center gap-3 p-1.5 pr-3 bg-white/[0.02] border border-white/[0.07] hover:bg-white/[0.05] hover:border-white/[0.12] rounded-xl transition text-left"
           >
             <img
               src={avatarUrl}
               alt="Officer Avatar"
-              className="w-8 h-8 rounded-lg object-cover shadow-sm border border-slate-200"
+              className="w-8 h-8 rounded-lg object-cover border border-white/10"
             />
             <div className="hidden md:block">
-              <p className="text-[11px] font-bold text-slate-800 leading-tight">{officerName}</p>
-              <p className="text-[9px] text-slate-400 leading-none mt-0.5">{rank || role} • {officer?.badge_number || "KSP"}</p>
+              <p className="text-[11px] font-bold text-[#F8FAFC] leading-tight">{officerName}</p>
+              <p className="text-[9px] text-[#64748B] leading-none mt-0.5">{rank || role} &middot; {officer?.badge_number || "KSP"}</p>
             </div>
-            <ChevronDown size={14} className="text-slate-400 ml-1" />
+            <ChevronDown size={14} className="text-[#64748B] ml-1" />
           </button>
 
           {/* Profile Dropdown Menu */}
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2.5 w-60 bg-white border border-slate-200/80 rounded-2xl shadow-premium glow-accent z-50 p-2 animate-in fade-in slide-in-from-top-3 duration-200">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800">{officerName}</p>
-                <p className="text-[10px] font-medium text-slate-500 mt-0.5">{rank || role} ({officer?.badge_number || "KSP"})</p>
-                <p className="text-[9px] text-slate-400">{station} • {district}</p>
+            <div
+              className="absolute right-0 mt-2.5 w-60 rounded-2xl z-50 p-2 border border-white/[0.08] shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200"
+              style={{ background: "#111827", boxShadow: "0 20px 50px -12px rgba(0,0,0,0.6)" }}
+            >
+              <div className="px-3 py-2.5 border-b border-white/[0.06]">
+                <p className="text-xs font-bold text-[#F8FAFC]">{officerName}</p>
+                <p className="text-[10px] font-medium text-[#94A3B8] mt-0.5">{rank || role} ({officer?.badge_number || "KSP"})</p>
+                <p className="text-[9px] text-[#64748B] mt-0.5">{station} &middot; {district}</p>
               </div>
               <div className="py-1">
-                <div className="px-3 py-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  Role: <span className="text-primary">{role}</span>
+                <div className="px-3 py-1.5 text-[9.5px] text-[#64748B] font-bold uppercase tracking-wider">
+                  Role: <span className="text-[#38BDF8]">{role}</span>
                 </div>
-                <div className="border-t border-slate-100 my-1" />
+                <div className="border-t border-white/[0.06] my-1" />
                 <button 
                   onClick={() => logout()}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-red-600 hover:bg-red-50 transition"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#F87171] hover:bg-[#EF4444]/10 transition"
                 >
                   <LogOut size={15} />
                   <span>Logout Session</span>
