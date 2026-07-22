@@ -7,47 +7,37 @@ export default function CinematicLoginAnimation({ officerName = "Officer", onCom
   const audioRef = useRef(null);
 
   useEffect(() => {
+    const startTime = Date.now();
+    const targetDurationMs = 6000; // Exact 6 seconds minimum duration
+
     // 1. Play background audio asset
     const audio = new Audio("/ritu_tts_audio.mp3");
     audioRef.current = audio;
 
-    // Listen for progress updates
-    const handleTimeUpdate = () => {
-      if (audio.duration && !isNaN(audio.duration)) {
-        const pct = (audio.currentTime / audio.duration) * 100;
-        setProgress(pct);
-      }
-    };
+    // Progress bar tick interval over 6 seconds
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(100, (elapsed / targetDurationMs) * 100);
+      setProgress(pct);
 
-    // Complete animation when audio finishes playing
-    const handleAudioEnded = () => {
-      setProgress(100);
-      setTimeout(() => {
+      if (elapsed >= targetDurationMs) {
+        clearInterval(interval);
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
         if (onComplete) onComplete();
-      }, 400);
-    };
-
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    audio.addEventListener("ended", handleAudioEnded);
+      }
+    }, 50);
 
     audio.play().catch((err) => {
       console.warn("Audio autoplay prevented by browser policy:", err);
-      // Fallback timer if browser blocks audio autoplay
-      let cur = 0;
-      const interval = setInterval(() => {
-        cur += 5;
-        setProgress(cur);
-        if (cur >= 100) {
-          clearInterval(interval);
-          if (onComplete) onComplete();
-        }
-      }, 250);
     });
 
     return () => {
-      audio.removeEventListener("timeupdate", handleTimeUpdate);
-      audio.removeEventListener("ended", handleAudioEnded);
-      audio.pause();
+      clearInterval(interval);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     };
   }, [onComplete]);
 
@@ -116,7 +106,7 @@ export default function CinematicLoginAnimation({ officerName = "Officer", onCom
         <div className="w-64 h-1.5 bg-slate-800 rounded-full mt-8 overflow-hidden relative border border-slate-700">
           <div
             style={{ width: `${progress}%` }}
-            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-200"
+            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-75"
           />
         </div>
       </div>
