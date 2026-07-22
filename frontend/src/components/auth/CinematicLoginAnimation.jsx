@@ -1,0 +1,106 @@
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Shield } from "lucide-react";
+
+export default function CinematicLoginAnimation({ officerName = "Officer", onComplete }) {
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    // Determine AM (Morning) vs PM (Evening)
+    const currentHour = new Date().getHours();
+    const isMorning = currentHour < 12;
+
+    // Synthesize Audio Speech Greeting using Web Speech API or local audio file
+    if ("speechSynthesis" in window) {
+      const greetingText = isMorning
+        ? `🙏 ನಮಸ್ಕಾರ. Good Morning ${officerName}. Welcome to Karnataka State Police Intelligence.`
+        : `🙏 ನಮಸ್ಕಾರ. Good Evening ${officerName}. Welcome to Karnataka State Police Intelligence.`;
+
+      const utterance = new SpeechSynthesisUtterance(greetingText);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Auto-complete after 5 seconds
+    const timer = setTimeout(() => {
+      if (onComplete) onComplete();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [officerName, onComplete]);
+
+  const currentHour = new Date().getHours();
+  const greetingTitle = currentHour < 12 ? "🌅 ಶುಭೋದಯ • Good Morning" : "🌙 ಶುಭ ಸಂಜೆ • Good Evening";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 overflow-hidden"
+    >
+      {/* Police Siren Light Pulse Effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/20 rounded-full blur-3xl animate-pulse delay-500" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15)_0,transparent_100%)]" />
+
+      {/* Center Container */}
+      <div className="relative z-10 flex flex-col items-center text-center p-8 max-w-lg">
+        {/* KSP Logo Badge Glow */}
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1, type: "spring" }}
+          className="relative mb-6"
+        >
+          <div className="w-28 h-28 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-2xl shadow-blue-500/50 border border-white/20 relative overflow-hidden group">
+            <Shield size={64} className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+            <div className="absolute inset-0 bg-white/10 animate-pulse" />
+          </div>
+          {/* Pulsing ring */}
+          <span className="absolute -inset-4 rounded-3xl border-2 border-blue-400/40 animate-ping" />
+        </motion.div>
+
+        {/* Greetings */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
+          className="space-y-3"
+        >
+          <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-widest inline-block mb-1">
+            {greetingTitle}
+          </span>
+
+          <h1 className="text-3xl font-extrabold text-white tracking-tight leading-tight drop-shadow-md">
+            Welcome to <br />
+            <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
+              Karnataka State Police Intelligence
+            </span>
+          </h1>
+
+          <div className="pt-2 text-2xl font-semibold text-emerald-400 tracking-wide flex items-center justify-center gap-2">
+            <span>🙏</span>
+            <span>ನಮಸ್ಕಾರ, {officerName}</span>
+          </div>
+
+          <p className="text-xs text-slate-400 tracking-wider uppercase font-medium pt-3">
+            Authenticating Officer Clearance • Launching Command Center...
+          </p>
+        </motion.div>
+
+        {/* Loading Bar */}
+        <div className="w-64 h-1.5 bg-slate-800 rounded-full mt-8 overflow-hidden relative border border-slate-700">
+          <motion.div
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 4.5, ease: "easeInOut" }}
+            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+}

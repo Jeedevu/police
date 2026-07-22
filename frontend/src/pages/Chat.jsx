@@ -1,605 +1,586 @@
-/**
- * Chat — Full AI-powered investigation chat interface.
- * Features: streaming, markdown, case cards, evidence cards, charts,
- * conversation history, voice input, pinning, bookmarks, suggestions.
- */
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { api } from "../services/authService";
-import { useAuth } from "../context/AuthContext";
+import {
+  Send,
+  Mic,
+  MicOff,
+  Globe,
+  Play,
+  Pause,
+  RotateCcw,
+  Square,
+  Volume2,
+  VolumeX,
+  Radio,
+  FileText,
+  Video,
+  Image as ImageIcon,
+  Shield,
+  Clock,
+  Trash2,
+  Plus,
+  MessageSquare,
+  ExternalLink,
+  CheckCircle,
+  Eye,
+  X,
+  Sparkles,
+} from "lucide-react";
+import api from "../services/api";
+import sarvamService, { SARVAM_LANGUAGES } from "../services/sarvamService";
+import Layout from "../components/layout/Layout";
 
-// ── Chat message bubble ────────────────────────────────────────────────────────
-function MessageBubble({ msg, isLatest }) {
-  const isUser = msg.role === "user";
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
-    >
-      {/* Avatar */}
-      <div
-        className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-sm font-bold shadow-lg ${
-          isUser
-            ? "bg-blue-600 text-white"
-            : "bg-gradient-to-br from-violet-600 to-blue-600 text-white"
-        }`}
-      >
-        {isUser ? "👮" : "🤖"}
-      </div>
-
-      {/* Content */}
-      <div className={`max-w-[80%] space-y-2 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
-        <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-            isUser
-              ? "bg-blue-600 text-white rounded-tr-sm"
-              : "bg-slate-800/80 text-slate-100 rounded-tl-sm border border-white/5"
-          }`}
-        >
-          {msg.content}
-        </div>
-
-        {/* Data table if available */}
-        {msg.data && msg.data.length > 0 && (
-          <DataTable data={msg.data} />
-        )}
-
-        {/* Findings */}
-        {msg.findings && msg.findings.length > 0 && (
-          <div className="bg-slate-800/60 border border-white/5 rounded-xl p-3 w-full">
-            <p className="text-xs font-semibold text-yellow-400 mb-2 uppercase tracking-wider">Key Findings</p>
-            <ul className="space-y-1">
-              {msg.findings.map((f, i) => (
-                <li key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
-                  <span className="text-yellow-400 mt-0.5">◆</span> {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Recommendations */}
-        {msg.recommendations && msg.recommendations.length > 0 && (
-          <div className="bg-slate-800/60 border border-green-500/20 rounded-xl p-3 w-full">
-            <p className="text-xs font-semibold text-green-400 mb-2 uppercase tracking-wider">Tactical Recommendations</p>
-            <ul className="space-y-1">
-              {msg.recommendations.map((r, i) => (
-                <li key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
-                  <span className="text-green-400 mt-0.5">▶</span> {r}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Confidence score */}
-        {msg.confidence_score != null && (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden w-24">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${msg.confidence_score}%`,
-                  background: msg.confidence_score > 80
-                    ? "linear-gradient(90deg, #10b981, #34d399)"
-                    : msg.confidence_score > 60
-                    ? "linear-gradient(90deg, #f59e0b, #fbbf24)"
-                    : "linear-gradient(90deg, #ef4444, #f87171)",
-                }}
-              />
-            </div>
-            <span className="text-xs text-slate-500">{msg.confidence_score}% confidence</span>
-          </div>
-        )}
-
-        <span className="text-xs text-slate-600 px-1">
-          {new Date(msg.timestamp).toLocaleTimeString()}
-        </span>
-      </div>
-    </motion.div>
-  );
-}
-
-// ── Data Table component ───────────────────────────────────────────────────────
-function DataTable({ data }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!data || data.length === 0) return null;
-  const cols = Object.keys(data[0]);
-  const displayData = expanded ? data : data.slice(0, 5);
-
-  return (
-    <div className="w-full bg-slate-900 border border-white/5 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-        <span className="text-xs font-semibold text-slate-400">
-          📊 {data.length} records
-        </span>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs text-blue-400 hover:text-blue-300"
-        >
-          {expanded ? "Show less" : `Show all ${data.length}`}
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-slate-800/50">
-              {cols.slice(0, 6).map((col) => (
-                <th key={col} className="px-3 py-2 text-left text-slate-400 font-medium uppercase tracking-wider whitespace-nowrap">
-                  {col.replace(/_/g, " ")}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {displayData.map((row, i) => (
-              <tr key={i} className="border-t border-white/5 hover:bg-white/3 transition-colors">
-                {cols.slice(0, 6).map((col) => (
-                  <td key={col} className="px-3 py-2 text-slate-300 whitespace-nowrap max-w-[200px] truncate">
-                    {String(row[col] ?? "")}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ── Suggestion chips ──────────────────────────────────────────────────────────
-const SUGGESTIONS = [
-  "Show recent murder cases in Bengaluru",
-  "Find repeat offenders",
-  "Theft cases in Mysuru this month",
-  "Who are the known associates of case 5?",
-  "Show all cyber crime cases",
-  "Vehicles owned by suspects",
-  "Evidence for case 12",
-  "Officer performance report",
-  "Missing persons last 30 days",
-  "Narcotics cases in Hubballi",
-];
-
-function SuggestionChips({ onSelect }) {
-  return (
-    <div className="flex flex-wrap gap-2 justify-center">
-      {SUGGESTIONS.slice(0, 5).map((s) => (
-        <motion.button
-          key={s}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.02, y: -1 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onSelect(s)}
-          className="px-3 py-1.5 text-xs rounded-full border border-white/10 bg-white/5 text-slate-400 hover:text-slate-200 hover:border-blue-500/50 hover:bg-blue-500/10 transition-all"
-        >
-          {s}
-        </motion.button>
-      ))}
-    </div>
-  );
-}
-
-// ── Voice input button ─────────────────────────────────────────────────────────
-function VoiceButton({ onTranscript }) {
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef(null);
-
-  const toggleVoice = () => {
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      alert("Voice input is not supported in this browser.");
-      return;
-    }
-
-    if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
-      return;
-    }
-
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new Recognition();
-    recognition.lang = "en-IN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognitionRef.current = recognition;
-
-    recognition.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      onTranscript(transcript);
-      setListening(false);
-    };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
-
-    recognition.start();
-    setListening(true);
-  };
-
-  return (
-    <motion.button
-      onClick={toggleVoice}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className={`p-2.5 rounded-xl transition-all ${
-        listening
-          ? "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse"
-          : "bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-slate-200"
-      }`}
-      title={listening ? "Stop listening" : "Voice input"}
-    >
-      🎤
-    </motion.button>
-  );
-}
-
-// ── Main Chat component ───────────────────────────────────────────────────────
 export default function Chat() {
-  const { officer } = useAuth();
+  // Session & Conversations
+  const [conversations, setConversations] = useState([]);
+  const [currentConvId, setCurrentConvId] = useState(null);
+
+  // Messages & Language
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [inputPrompt, setInputPrompt] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("kn-IN");
   const [loading, setLoading] = useState(false);
-  const [sessionId] = useState(() => `officer_${officer?.id || "anon"}_${Date.now()}`);
-  const [pinnedChats, setPinnedChats] = useState([]);
-  const [bookmarks, setBookmarks] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [history, setHistory] = useState([]);
+
+  // Evidence Intelligence (Right Panel)
+  const [activeEvidenceList, setActiveEvidenceList] = useState([]);
+  const [selectedEvidenceItem, setSelectedEvidenceItem] = useState(null);
+
+  // Audio Playback & Hands-Free
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [handsFree, setHandsFree] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+
+  // Recording State
+  const [isRecording, setIsRecording] = useState(false);
+
+  // Refs
   const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const audioRef = useRef(new Audio());
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
+  // Fetch Saved Conversations on mount
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    // Load history
-    loadHistory();
+    fetchConversations();
   }, []);
 
-  const loadHistory = async () => {
+  // Auto-scroll messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  // Audio element listeners
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    const handleEnded = () => {
+      setIsPlaying(false);
+      if (handsFree) {
+        setTimeout(() => startRecording(), 800);
+      }
+    };
+    audioEl.addEventListener("ended", handleEnded);
+    return () => audioEl.removeEventListener("ended", handleEnded);
+  }, [handsFree]);
+
+  const fetchConversations = async () => {
     try {
-      const { data } = await api.get(`/api/ai/history?session_id=${sessionId}`);
-      setHistory(data.history || []);
-    } catch (_) {}
+      const res = await api.get("/api/ai/conversations");
+      if (res.data && Array.isArray(res.data)) {
+        setConversations(res.data);
+      }
+    } catch (e) {
+      console.warn("Could not fetch conversation history:", e);
+    }
   };
 
-  const sendMessage = useCallback(async (text) => {
-    if (!text.trim() || loading) return;
-    const userMsg = {
+  const loadConversationHistory = async (convId) => {
+    setCurrentConvId(convId);
+    setLoading(true);
+    try {
+      const res = await api.get(`/api/ai/conversations/${convId}`);
+      if (res.data && res.data.messages) {
+        setMessages(
+          res.data.messages.map((m) => ({
+            id: m.id,
+            role: m.role,
+            content: m.message,
+            translated: m.translated_message,
+            audio_url: m.audio_url,
+            evidence: m.evidence || [],
+            timestamp: m.created_at,
+          }))
+        );
+        setSelectedLanguage(res.data.language || "kn-IN");
+        // Load latest message evidence
+        const lastAssistant = res.data.messages.filter((m) => m.role === "assistant").pop();
+        if (lastAssistant && lastAssistant.evidence_json) {
+          setActiveEvidenceList(lastAssistant.evidence_json);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load conversation session:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createNewSession = () => {
+    setCurrentConvId(null);
+    setMessages([]);
+    setActiveEvidenceList([]);
+  };
+
+  const deleteSession = async (convId, e) => {
+    e.stopPropagation();
+    try {
+      await api.delete(`/api/ai/conversations/${convId}`);
+      setConversations((prev) => prev.filter((c) => c.conversation_id !== convId));
+      if (currentConvId === convId) {
+        createNewSession();
+      }
+    } catch (err) {
+      console.error("Failed to delete session:", err);
+    }
+  };
+
+  const handleSendMessage = async (overridePrompt = null) => {
+    const promptText = overridePrompt || inputPrompt.trim();
+    if (!promptText || loading) return;
+
+    if (!overridePrompt) setInputPrompt("");
+
+    const userMessage = {
+      id: Date.now(),
       role: "user",
-      content: text,
+      content: promptText,
       timestamp: new Date().toISOString(),
     };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+
+    setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
     try {
-      const { data } = await api.post("/api/ai/chat", {
-        message: text,
-        session_id: sessionId,
-        stream: false,
-      });
+      const chatRes = await sarvamService.sendChatMessage(
+        promptText,
+        selectedLanguage,
+        autoSpeak && !isMuted
+      );
 
-      const aiMsg = {
+      const assistantMessage = {
+        id: Date.now() + 1,
         role: "assistant",
-        content: data.summary || data.formatted_answer || "I processed your query.",
+        content: chatRes.response,
+        evidence: chatRes.evidence || [],
+        audio_url: chatRes.tts?.audio_urls?.[0] || null,
         timestamp: new Date().toISOString(),
-        data: data.data || [],
-        findings: data.findings || [],
-        recommendations: data.recommendations || [],
-        confidence_score: data.confidence_score,
-        generated_sql: data.generated_sql,
-        rows_returned: data.rows_returned,
-        intent: data.intent,
       };
-      setMessages((prev) => [...prev, aiMsg]);
-      loadHistory();
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      if (chatRes.evidence && chatRes.evidence.length > 0) {
+        setActiveEvidenceList(chatRes.evidence);
+      }
+
+      if (chatRes.conversation_id) {
+        setCurrentConvId(chatRes.conversation_id);
+        fetchConversations();
+      }
+
+      // Audio Playback
+      if (chatRes.tts?.audio_urls?.[0] && autoSpeak && !isMuted) {
+        const url = chatRes.tts.audio_urls[0];
+        setAudioUrl(url);
+        audioRef.current.src = url;
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
+      }
     } catch (err) {
+      console.error("AI Chat Error:", err);
       setMessages((prev) => [
         ...prev,
         {
+          id: Date.now() + 1,
           role: "assistant",
-          content: `⚠️ ${err?.response?.data?.detail || "Failed to process your query. Please try again."}`,
+          content: "Sorry, an error occurred while connecting to the investigation service.",
+          evidence: [],
           timestamp: new Date().toISOString(),
         },
       ]);
     } finally {
       setLoading(false);
     }
-  }, [loading, sessionId]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    sendMessage(input);
   };
 
-  const pinMessage = (msg) => {
-    setPinnedChats((prev) =>
-      prev.find((p) => p.timestamp === msg.timestamp)
-        ? prev
-        : [...prev, msg]
-    );
+  // Recording Hands-Free logic
+  const startRecording = async () => {
+    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        if (audioBlob.size > 500) {
+          const sttRes = await sarvamService.transcribeSpeech(audioBlob, selectedLanguage);
+          if (sttRes.transcript) {
+            handleSendMessage(sttRes.transcript);
+          }
+        }
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (e) {
+      console.error("Mic access denied:", e);
+    }
   };
 
-  const bookmarkMessage = (msg) => {
-    setBookmarks((prev) =>
-      prev.find((b) => b.timestamp === msg.timestamp)
-        ? prev.filter((b) => b.timestamp !== msg.timestamp)
-        : [...prev, msg]
-    );
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    api.delete(`/api/ai/history?session_id=${sessionId}`).catch(() => {});
+  // Voice playback controls
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else if (audioUrl) {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
+    }
   };
 
-  const isEmpty = messages.length === 0;
+  const handleStop = () => {
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    setIsPlaying(false);
+  };
+
+  const handleReplay = () => {
+    if (audioUrl) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
+    }
+  };
 
   return (
-    <div className="h-screen bg-[#030712] flex overflow-hidden">
-      {/* Sidebar */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.aside
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 260, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="border-r border-white/5 flex flex-col overflow-hidden flex-shrink-0"
-            style={{ background: "rgba(10, 15, 30, 0.95)" }}
-          >
-            {/* Header */}
-            <div className="p-4 border-b border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">🛡️</span>
-                <span className="text-sm font-bold text-white">KSP Intelligence</span>
+    <Layout>
+      <div className="h-[calc(100vh-6rem)] flex gap-4 overflow-hidden">
+        {/* LEFT PANEL — Saved Conversation History Sessions */}
+        <div className="w-80 bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between hidden md:flex shadow-xl">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-slate-100 font-bold text-xs">
+                <MessageSquare size={16} className="text-blue-400" />
+                <span>Conversation Sessions</span>
               </div>
-              <p className="text-xs text-slate-500">AI Chat Interface</p>
-            </div>
-
-            {/* New chat button */}
-            <div className="p-3">
               <button
-                onClick={clearChat}
-                className="w-full py-2 px-3 rounded-xl text-xs font-medium border border-white/10 bg-white/5 text-slate-400 hover:bg-blue-500/20 hover:text-blue-300 hover:border-blue-500/30 transition-all flex items-center gap-2"
+                onClick={createNewSession}
+                className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-sm"
               >
-                <span>✏️</span> New Conversation
+                <Plus size={14} /> New
               </button>
             </div>
 
-            {/* Recent history */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-1">
-              {history.length > 0 && (
-                <>
-                  <p className="text-xs text-slate-600 uppercase tracking-wider px-2 mb-2 font-medium">Recent</p>
-                  {history
-                    .filter((h) => h.role === "user")
-                    .slice(-8)
-                    .reverse()
-                    .map((h, i) => (
-                      <button
-                        key={i}
-                        onClick={() => sendMessage(h.content)}
-                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors truncate"
-                      >
-                        {h.content}
-                      </button>
-                    ))}
-                </>
-              )}
-
-              {pinnedChats.length > 0 && (
-                <>
-                  <p className="text-xs text-slate-600 uppercase tracking-wider px-2 mt-4 mb-2 font-medium">📌 Pinned</p>
-                  {pinnedChats.map((p, i) => (
-                    <div key={i} className="px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                      <p className="text-xs text-yellow-400 truncate">{p.content}</p>
+            {/* Conversation list */}
+            <div className="space-y-1.5 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
+              {conversations.length > 0 ? (
+                conversations.map((c) => (
+                  <div
+                    key={c.conversation_id}
+                    onClick={() => loadConversationHistory(c.conversation_id)}
+                    className={`p-3 rounded-2xl cursor-pointer transition flex items-center justify-between text-xs group ${
+                      currentConvId === c.conversation_id
+                        ? "bg-blue-600/20 border border-blue-500/40 text-blue-300 font-bold"
+                        : "bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/80"
+                    }`}
+                  >
+                    <div className="truncate flex-1 pr-2">
+                      <p className="truncate font-medium">{c.title}</p>
+                      <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Clock size={10} /> {new Date(c.updated_at).toLocaleDateString()}
+                      </p>
                     </div>
-                  ))}
-                </>
-              )}
-
-              {bookmarks.length > 0 && (
-                <>
-                  <p className="text-xs text-slate-600 uppercase tracking-wider px-2 mt-4 mb-2 font-medium">🔖 Bookmarks</p>
-                  {bookmarks.map((b, i) => (
-                    <div key={i} className="px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <p className="text-xs text-blue-400 truncate">{b.content}</p>
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-
-            {/* Officer info */}
-            <div className="p-3 border-t border-white/5">
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/3">
-                <div className="w-7 h-7 rounded-lg bg-blue-600/30 flex items-center justify-center text-xs">👮</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-300 truncate">{officer?.full_name || "Officer"}</p>
-                  <p className="text-xs text-slate-600">{officer?.role || "Unknown"}</p>
+                    <button
+                      onClick={(e) => deleteSession(c.conversation_id, e)}
+                      className="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-slate-500">
+                  No saved conversations found. Start a new query!
                 </div>
-              </div>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Main chat area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <div
-          className="h-14 border-b border-white/5 flex items-center px-4 gap-3 flex-shrink-0"
-          style={{ background: "rgba(10, 15, 30, 0.95)" }}
-        >
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all"
-          >
-            ☰
-          </button>
-
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-sm font-medium text-white">Investigation AI</span>
-              <span className="text-xs text-slate-500">Gemini 2.5 Flash</span>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={clearChat}
-              className="p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all text-xs"
-              title="Clear chat"
-            >
-              🗑️
-            </button>
+          <div className="p-3 bg-slate-950/80 border border-slate-800/80 rounded-2xl text-[11px] text-slate-400">
+            <p className="font-bold text-slate-200 mb-1 flex items-center gap-1">
+              <Shield size={12} className="text-emerald-400" /> PostgreSQL Persistence
+            </p>
+            Every query is automatically saved to PostgreSQL audit trail.
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {isEmpty ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center h-full gap-6 text-center"
-            >
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl shadow-2xl"
-                style={{ background: "linear-gradient(135deg, #1d4ed8, #7c3aed)" }}
-              >
-                🤖
+        {/* CENTER PANEL — Main AI Conversation Pane */}
+        <div className="flex-1 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col overflow-hidden shadow-xl">
+          {/* Header Controls */}
+          <div className="p-4 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                <Sparkles size={18} className="animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white mb-2">
-                  Karnataka Police Intelligence AI
-                </h2>
-                <p className="text-sm text-slate-400 max-w-md">
-                  Ask about cases, suspects, evidence, crime trends, or get investigation assistance.
-                  I can search the database and provide actionable insights.
-                </p>
+                <h2 className="text-xs font-bold text-slate-100">AI Investigation Assistant</h2>
+                <p className="text-[10px] text-slate-400">Gemini 2.5 Flash • Sarvam Bulbul V3 Voice</p>
               </div>
-              <SuggestionChips onSelect={sendMessage} />
-            </motion.div>
-          ) : (
-            <>
-              {messages.map((msg, i) => (
-                <div key={i} className="group relative">
-                  <MessageBubble msg={msg} isLatest={i === messages.length - 1} />
-                  {/* Action buttons */}
-                  <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    <button
-                      onClick={() => pinMessage(msg)}
-                      className="p-1 text-xs rounded bg-slate-700 text-slate-400 hover:text-yellow-400"
-                      title="Pin"
-                    >📌</button>
-                    <button
-                      onClick={() => bookmarkMessage(msg)}
-                      className="p-1 text-xs rounded bg-slate-700 text-slate-400 hover:text-blue-400"
-                      title="Bookmark"
-                    >🔖</button>
-                  </div>
-                </div>
-              ))}
-
-              {/* Typing indicator */}
-              {loading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex gap-3"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center text-sm">
-                    🤖
-                  </div>
-                  <div className="px-4 py-3 bg-slate-800/80 border border-white/5 rounded-2xl rounded-tl-sm flex items-center gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                        style={{ animationDelay: `${i * 0.15}s` }}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              <div ref={messagesEndRef} />
-
-              {/* Suggestions after response */}
-              {!loading && messages.length > 0 && messages.length < 4 && (
-                <div className="pt-2">
-                  <p className="text-xs text-slate-600 text-center mb-3">Try asking…</p>
-                  <SuggestionChips onSelect={sendMessage} />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Input area */}
-        <div
-          className="border-t border-white/5 p-4 flex-shrink-0"
-          style={{ background: "rgba(10, 15, 30, 0.95)" }}
-        >
-          <form onSubmit={handleSubmit} className="flex gap-2 items-end">
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage(input);
-                  }
-                }}
-                placeholder="Ask about cases, suspects, vehicles, evidence… (Kannada supported)"
-                rows={1}
-                className="w-full px-4 py-3 pr-4 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all resize-none"
-                style={{ minHeight: "48px", maxHeight: "200px" }}
-                onInput={(e) => {
-                  e.target.style.height = "auto";
-                  e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
-                }}
-              />
             </div>
 
-            <VoiceButton onTranscript={(t) => { setInput(t); sendMessage(t); }} />
+            {/* Language Selector & Controls */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition appearance-none cursor-pointer font-medium"
+                >
+                  {SARVAM_LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.flag} {lang.name}
+                    </option>
+                  ))}
+                </select>
+                <Globe size={14} className="absolute left-2.5 top-2 text-slate-400" />
+              </div>
 
-            <motion.button
-              type="submit"
-              disabled={!input.trim() || loading}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-3 rounded-xl text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              style={{
-                background: "linear-gradient(135deg, #1d4ed8, #7c3aed)",
-                minWidth: "48px",
-              }}
+              {/* Auto Speak Toggle */}
+              <button
+                onClick={() => setAutoSpeak(!autoSpeak)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
+                  autoSpeak
+                    ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
+                    : "bg-slate-900 border-slate-700 text-slate-400"
+                }`}
+              >
+                <Volume2 size={14} />
+                <span>Auto Speak</span>
+              </button>
+
+              {/* Hands-Free Toggle */}
+              <button
+                onClick={() => setHandsFree(!handsFree)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
+                  handsFree
+                    ? "bg-emerald-600/20 border-emerald-500/30 text-emerald-400"
+                    : "bg-slate-900 border-slate-700 text-slate-400"
+                }`}
+              >
+                <Radio size={14} className={handsFree ? "animate-pulse" : ""} />
+                <span>Hands-Free</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Messages Stream */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {messages.length === 0 && (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-3">
+                <div className="w-16 h-16 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                  <Sparkles size={32} />
+                </div>
+                <h3 className="text-sm font-bold text-slate-200">KSP Intelligent Conversational Platform</h3>
+                <p className="text-xs max-w-md text-slate-400">
+                  Ask natural language queries regarding Repeat Offenders, FIRs, Suspect Networks, Crime Statistics, or Forensic Evidence.
+                </p>
+              </div>
+            )}
+
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shadow-md ${
+                    m.role === "user" ? "bg-blue-600 text-white" : "bg-gradient-to-tr from-blue-600 to-indigo-600 text-white"
+                  }`}
+                >
+                  {m.role === "user" ? "👮" : "🤖"}
+                </div>
+                <div className={`max-w-[80%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                  <div
+                    className={`p-4 rounded-2xl text-xs leading-relaxed ${
+                      m.role === "user"
+                        ? "bg-blue-600 text-white rounded-tr-sm"
+                        : "bg-slate-950/80 text-slate-100 rounded-tl-sm border border-slate-800"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{m.content}</p>
+                  </div>
+
+                  {/* Audio Controls Bar for Assistant Message */}
+                  {m.role === "assistant" && m.audio_url && (
+                    <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
+                      <button
+                        onClick={handlePlayPause}
+                        className="p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+                      >
+                        {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                      </button>
+                      <button onClick={handleReplay} className="p-1 text-slate-400 hover:text-white transition">
+                        <RotateCcw size={13} />
+                      </button>
+                      <button onClick={handleStop} className="p-1 text-slate-400 hover:text-white transition">
+                        <Square size={13} />
+                      </button>
+                      <span className="text-[10px] text-slate-400">Sarvam Bulbul Voice Playback</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex items-center gap-2 text-xs text-blue-400 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+                Processing Gemini 2.5 Intelligence & PostgreSQL Evidence query...
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Box */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMessage();
+            }}
+            className="p-4 bg-slate-950 border-t border-slate-800 flex items-center gap-3"
+          >
+            <button
+              type="button"
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`p-3 rounded-2xl transition ${
+                isRecording
+                  ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50"
+                  : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+              }`}
             >
-              {loading ? (
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin block" />
-              ) : (
-                "➤"
-              )}
-            </motion.button>
+              {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+            </button>
+            <input
+              type="text"
+              value={inputPrompt}
+              onChange={(e) => setInputPrompt(e.target.value)}
+              placeholder="Ask Crime AI assistant (e.g. Show repeat offenders in Bengaluru)..."
+              className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+            />
+            <button
+              type="submit"
+              disabled={!inputPrompt.trim() || loading}
+              className="p-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-2xl transition shadow-lg shadow-blue-500/30"
+            >
+              <Send size={18} />
+            </button>
           </form>
+        </div>
 
-          <p className="text-center text-xs text-slate-700 mt-2">
-            Powered by Gemini 2.5 Flash • Restricted data system • Authorized use only
-          </p>
+        {/* RIGHT PANEL — Interactive Evidence Intelligence & Citations */}
+        <div className="w-80 bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between hidden lg:flex shadow-xl">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-slate-100 font-bold text-xs">
+                <FileText size={16} className="text-emerald-400" />
+                <span>Evidence Intelligence</span>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                LIVE DB
+              </span>
+            </div>
+
+            {/* Evidence Items List */}
+            <div className="space-y-3 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
+              {activeEvidenceList.length > 0 ? (
+                activeEvidenceList.map((ev, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedEvidenceItem(ev)}
+                    className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        {ev.type || "DOC"}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-400">{ev.confidence} match</span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-200 group-hover:text-blue-400 transition">
+                      {ev.title}
+                    </h4>
+
+                    <div className="mt-2 text-[10px] text-slate-400 space-y-1 border-t border-slate-800/60 pt-2">
+                      <p><strong className="text-slate-300">FIR No:</strong> {ev.fir_no}</p>
+                      <p><strong className="text-slate-300">Case No:</strong> {ev.case_number}</p>
+                      <p><strong className="text-slate-300">Court Status:</strong> {ev.court_status}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-slate-500">
+                  No active evidence citations loaded. Run a query to load linked FIRs & CCTV.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Modal Evidence Viewer */}
+      {selectedEvidenceItem && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative">
+            <button
+              onClick={() => setSelectedEvidenceItem(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            >
+              <X size={18} />
+            </button>
+
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <FileText size={18} className="text-blue-400" />
+              Evidence Asset Viewer — {selectedEvidenceItem.id}
+            </h3>
+
+            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs space-y-2">
+              <p><strong className="text-slate-300">Title:</strong> {selectedEvidenceItem.title}</p>
+              <p><strong className="text-slate-300">FIR Number:</strong> {selectedEvidenceItem.fir_no}</p>
+              <p><strong className="text-slate-300">Case Number:</strong> {selectedEvidenceItem.case_number}</p>
+              <p><strong className="text-slate-300">Investigating Officer:</strong> {selectedEvidenceItem.officer}</p>
+              <p><strong className="text-slate-300">Court Status:</strong> {selectedEvidenceItem.court_status}</p>
+              <p><strong className="text-slate-300">Confidence Match:</strong> {selectedEvidenceItem.confidence}</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSelectedEvidenceItem(null)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition"
+              >
+                Close Viewer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Layout>
   );
 }

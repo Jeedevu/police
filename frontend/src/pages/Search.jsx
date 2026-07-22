@@ -17,7 +17,12 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Phone
+  Phone,
+  Fingerprint,
+  ScanFace,
+  FileText,
+  ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import api from "../services/api";
@@ -32,16 +37,29 @@ const DISTRICTS = [
   "Ballari", "Davangere", "Shivamogga", "Tumkuru", "Kalaburagi",
 ];
 
+const SEARCH_MODES = [
+  { id: "all", label: "🔍 All Fields", icon: SearchIcon },
+  { id: "name", label: "👤 Name", icon: UserX },
+  { id: "phone", label: "📞 Phone Number", icon: Phone },
+  { id: "aadhaar", label: "🪪 Aadhaar ID", icon: ShieldCheck },
+  { id: "vehicle", label: "🚘 Vehicle Reg", icon: Car },
+  { id: "fingerprint", label: "🖐️ Fingerprint ID", icon: Fingerprint },
+  { id: "face", label: "📷 Face ID", icon: ScanFace },
+  { id: "case", label: "📁 Case / FIR No", icon: FileText },
+];
+
 export default function Search() {
   const [query, setQuery] = useState("");
+  const [searchMode, setSearchMode] = useState("all");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedSuspect, setSelectedSuspect] = useState(null);
 
   // Advanced filter state
   const [filterCrimeType, setFilterCrimeType] = useState("");
   const [filterDistrict, setFilterDistrict] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all"); // all | cases | people | vehicles | phones | evidence
+  const [filterCategory, setFilterCategory] = useState("all");
   const [filterMinRisk, setFilterMinRisk] = useState("");
 
   const hasActiveFilters = filterCrimeType || filterDistrict || filterCategory !== "all" || filterMinRisk;
@@ -53,6 +71,7 @@ export default function Search() {
     try {
       const params = new URLSearchParams();
       if (q.trim()) params.append("q", q.trim());
+      if (searchMode !== "all") params.append("search_mode", searchMode);
       if (filterCrimeType) params.append("crime_type", filterCrimeType);
       if (filterDistrict) params.append("district", filterDistrict);
       if (filterMinRisk) params.append("min_risk", filterMinRisk);
@@ -60,7 +79,8 @@ export default function Search() {
       const res = await api.get(`/search?${params.toString()}`);
       setResults(res.data);
     } catch (err) {
-      console.error("Search failed:", err);
+      console.error(err);
+      setResults({ cases: [], people: [], vehicles: [], phones: [], evidence: [] });
     } finally {
       setLoading(false);
     }
@@ -73,160 +93,146 @@ export default function Search() {
     setFilterMinRisk("");
   };
 
-  // Filter results client-side by category and crime type / district
-  const filteredResults = results
-    ? {
-        cases: (results.cases || []).filter((c) => {
-          if (filterCrimeType && !c.crime_type?.toLowerCase().includes(filterCrimeType.toLowerCase())) return false;
-          if (filterDistrict && !c.district?.toLowerCase().includes(filterDistrict.toLowerCase())) return false;
-          return true;
-        }),
-        people: (results.people || []).filter((p) => {
-          if (filterMinRisk && (p.risk_score || 0) < parseInt(filterMinRisk)) return false;
-          return true;
-        }),
-        vehicles: results.vehicles || [],
-        phones: results.phones || [],
-        evidence: results.evidence || [],
-      }
-    : null;
-
-  const showSection = (id) => filterCategory === "all" || filterCategory === id;
-
   return (
     <Layout>
-      <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-10 select-none">
-        
-        {/* Page Header */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-soft">
-          <h1 className="text-lg font-black tracking-tight text-slate-800 flex items-center gap-2">
-            <SearchIcon size={20} className="text-primary" /> SYSTEM-WIDE INTEL SEARCH
-          </h1>
-          <p className="text-slate-400 text-xs mt-1">
-            Execute secure records inquiries across cases, vehicles, cell phones, suspects, and forensic evidence.
-          </p>
-        </div>
-
-        {/* Dynamic Search Bar panel */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-soft space-y-4">
-          <div className="flex gap-3">
-            <div className="flex-grow relative flex items-center">
-              <input
-                id="search-input"
-                type="text"
-                placeholder="Search by name, Aadhaar, registration, FIR number, phone, IMEI..."
-                className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-xl pl-11 pr-4 py-3 text-xs text-slate-800 focus:outline-none transition shadow-inner placeholder-slate-400"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-              <SearchIcon className="absolute left-4 text-slate-400" size={16} />
+      <div className="space-y-6 max-w-7xl mx-auto">
+        {/* Top Search Header */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                <SearchIcon size={22} className="text-blue-400" />
+                Intelligence & Suspect Search Engine
+              </h1>
+              <p className="text-xs text-slate-400 mt-1">
+                Search multi-attribute records across Suspect Names, Phone CDR, Aadhaar, Fingerprints, Face IDs, & Vehicles
+              </p>
             </div>
-            
+
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 font-bold text-xs px-4 rounded-xl transition border ${
+              className={`px-4 py-2 rounded-2xl text-xs font-bold border transition flex items-center gap-2 ${
                 showFilters || hasActiveFilters
-                  ? "bg-primary/10 text-primary border-primary/20"
-                  : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
+                  ? "bg-blue-600/20 border-blue-500/40 text-blue-300"
+                  : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
               }`}
             >
-              <Filter size={14} />
+              <Filter size={15} />
               <span>Filters</span>
               {hasActiveFilters && (
-                <span className="bg-primary text-white text-[8px] font-black rounded-full px-1.5 py-0.5 ml-1">
-                  ON
-                </span>
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               )}
-            </button>
-            
-            <button
-              id="search-btn"
-              onClick={() => handleSearch()}
-              disabled={loading}
-              className="bg-primary hover:bg-primary/95 disabled:bg-slate-100 text-white disabled:text-slate-400 font-bold text-xs px-6 rounded-xl shadow-md transition"
-            >
-              {loading ? "Inquiring..." : "Execute Search"}
             </button>
           </div>
 
-          {/* Advanced Filters Expand Panel */}
+          {/* Search Mode Quick Selector Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+            {SEARCH_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => setSearchMode(mode.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  searchMode === mode.id
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                    : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>{mode.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Search input form */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+            className="flex gap-3"
+          >
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search by ${SEARCH_MODES.find(m => m.id === searchMode)?.label}...`}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3.5 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition shadow-inner"
+              />
+              <SearchIcon size={18} className="absolute left-4 top-3.5 text-slate-500" />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-blue-500/30 flex items-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Search</span>
+                  <ChevronRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Advanced Filter Collapsible Bar */}
           <AnimatePresence>
             {showFilters && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="pt-4 border-t border-slate-800 space-y-4"
               >
-                <div className="bg-slate-50/50 border border-slate-150 rounded-2xl p-4 mt-2 space-y-4">
-                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Configure Inquest Filters</span>
-                    {hasActiveFilters && (
-                      <button
-                        onClick={clearFilters}
-                        className="flex items-center gap-1 text-[10px] text-red-600 font-bold hover:underline"
-                      >
-                        <X size={10} /> Reset Filters
-                      </button>
-                    )}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1.5 uppercase text-[10px]">Crime Type</label>
+                    <select
+                      value={filterCrimeType}
+                      onChange={(e) => setFilterCrimeType(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">All Crime Types</option>
+                      {CRIME_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
                   </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Crime Head</label>
-                      <select
-                        className="bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-600 focus:outline-none focus:border-primary"
-                        value={filterCrimeType}
-                        onChange={(e) => setFilterCrimeType(e.target.value)}
-                      >
-                        <option value="">All Crime Types</option>
-                        {CRIME_TYPES.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Regional Unit</label>
-                      <select
-                        className="bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-600 focus:outline-none focus:border-primary"
-                        value={filterDistrict}
-                        onChange={(e) => setFilterDistrict(e.target.value)}
-                      >
-                        <option value="">All Districts</option>
-                        {DISTRICTS.map((d) => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1.5 uppercase text-[10px]">District</label>
+                    <select
+                      value={filterDistrict}
+                      onChange={(e) => setFilterDistrict(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">All Districts</option>
+                      {DISTRICTS.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Dossier Category</label>
-                      <select
-                        className="bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-600 focus:outline-none focus:border-primary"
-                        value={filterCategory}
-                        onChange={(e) => setFilterCategory(e.target.value)}
-                      >
-                        <option value="all">All Fields</option>
-                        <option value="cases">FIR Cases</option>
-                        <option value="people">Accused Suspects</option>
-                        <option value="vehicles">Tagged Vehicles</option>
-                        <option value="phones">Mobile Assets</option>
-                        <option value="evidence">Evidence Vault</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1.5 uppercase text-[10px]">Minimum Risk Score</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 70"
+                      value={filterMinRisk}
+                      onChange={(e) => setFilterMinRisk(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Min Suspect Danger Risk</label>
-                      <input
-                        type="number"
-                        placeholder="e.g. 70%"
-                        className="bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-600 focus:outline-none focus:border-primary placeholder-slate-300"
-                        value={filterMinRisk}
-                        onChange={(e) => setFilterMinRisk(e.target.value)}
-                      />
-                    </div>
+                  <div className="flex items-end">
+                    <button
+                      onClick={clearFilters}
+                      className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition"
+                    >
+                      Reset Filters
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -234,153 +240,118 @@ export default function Search() {
           </AnimatePresence>
         </div>
 
-        {/* Results Workspace */}
-        {filteredResults ? (
-          <div className="space-y-6">
-            
-            {/* Cases results */}
-            {showSection("cases") && filteredResults.cases.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Matching FIR Files ({filteredResults.cases.length})</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredResults.cases.map((c) => (
-                    <div key={c.case_id} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft hover:shadow-premium transition-all duration-300 flex justify-between items-start gap-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-primary/5 text-primary text-[8px] font-bold px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wider">{c.crime_type}</span>
-                          <span className="font-bold text-slate-800 text-xs">{c.fir_number}</span>
+        {/* Results Container */}
+        {results && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Results Column */}
+            <div className="lg:col-span-2 space-y-4">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                <span>Matching Intelligence Records</span>
+                <span>{results.people?.length || 0} Suspects Found</span>
+              </h2>
+
+              {results.people && results.people.length > 0 ? (
+                results.people.map((p) => (
+                  <div
+                    key={p.person_id}
+                    onClick={() => setSelectedSuspect(p)}
+                    className={`p-5 bg-slate-900 border rounded-3xl cursor-pointer transition shadow-xl space-y-3 ${
+                      selectedSuspect?.person_id === p.person_id
+                        ? "border-blue-500 ring-2 ring-blue-500/20 bg-slate-900/90"
+                        : "border-slate-800 hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg font-bold text-blue-400 shadow-inner">
+                          👮
                         </div>
-                        <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-2 font-medium">
-                          <span className="flex items-center gap-1"><MapPin size={11} /> {c.district || "HQ"}</span>
-                          <span className="flex items-center gap-1"><Calendar size={11} /> {c.crime_date || "N/A"}</span>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-100">{p.full_name}</h3>
+                          <p className="text-[11px] text-slate-400">{p.gender}, {p.age} years • {p.district || "Bengaluru"}</p>
                         </div>
                       </div>
-                      <Link
-                        to={`/cases?case_id=${c.case_id}`}
-                        className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-600 px-3 py-1.5 rounded-xl transition shrink-0"
+
+                      <span
+                        className={`px-3 py-1 rounded-xl text-xs font-bold border ${
+                          p.risk_score >= 80
+                            ? "bg-red-500/10 text-red-400 border-red-500/20"
+                            : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                        }`}
                       >
-                        Inspect Dossier
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Suspects results */}
-            {showSection("people") && filteredResults.people.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Matching Accused Suspects ({filteredResults.people.length})</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredResults.people.map((p) => (
-                    <div key={p.person_id} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <Link to={`/profile/1`} className="font-bold text-slate-800 text-xs truncate hover:text-primary transition-colors flex items-center gap-1">
-                          <span>{p.full_name}</span>
-                          <ChevronRight size={12} />
-                        </Link>
-                        <p className="text-[10px] text-slate-400 mt-1 truncate">ID/Aadhaar: {p.id_number || "N/A"}</p>
-                        <p className="text-[9px] text-slate-400 truncate">Contact: {p.mobile || "No grid logging"}</p>
-                      </div>
-                      <span className="text-[9px] font-black text-red-600 bg-red-50 border border-red-150 px-2 py-0.5 rounded-full shrink-0">
-                        {p.risk_score}% RISK
+                        {p.risk_score}% Risk Score
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* Tagged Vehicles results */}
-            {showSection("vehicles") && filteredResults.vehicles.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Matching Tagged Vehicles ({filteredResults.vehicles.length})</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredResults.vehicles.map((v, idx) => (
-                    <div key={idx} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-150 text-slate-500">
-                          <Car size={16} />
-                        </div>
-                        <div>
-                          <p className="font-extrabold text-slate-800 text-xs">{v.registration_number}</p>
-                          <p className="text-[9px] text-slate-400 mt-0.5">{v.color || ""} {v.model || "Unknown Automobile"}</p>
-                        </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase block">Phone</span>
+                        <span className="text-slate-300 font-medium">{p.mobile || "N/A"}</span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-lg">
-                        Owner ID: {v.person_id}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Tracked Phones results */}
-            {showSection("phones") && filteredResults.phones.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Matching Tracked Mobile Assets ({filteredResults.phones.length})</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredResults.phones.map((ph, idx) => (
-                    <div key={idx} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-150 text-slate-500">
-                          <Phone size={14} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 text-xs">{ph.phone_number}</p>
-                          <p className="text-[9px] text-slate-400 mt-0.5">IMEI: {ph.imei || "No secure mapping"}</p>
-                        </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase block">Aadhaar</span>
+                        <span className="text-slate-300 font-medium">{p.aadhaar || "N/A"}</span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 bg-slate-50 border border-slate-200/50 px-2 py-0.5 rounded-lg">
-                        Subject ID: {ph.person_id}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Evidence Vault results */}
-            {showSection("evidence") && filteredResults.evidence.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Matching Forensic Evidence ({filteredResults.evidence.length})</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredResults.evidence.map((ev) => (
-                    <div key={ev.evidence_id} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft hover:shadow-premium transition-all duration-300">
-                      <div className="flex justify-between items-start border-b border-slate-100 pb-2 mb-3">
-                        <div>
-                          <h4 className="text-xs font-bold text-slate-800 truncate max-w-[200px]">{ev.description}</h4>
-                          <p className="text-[9px] text-slate-400 mt-0.5">Logged: {ev.date_logged || "N/A"}</p>
-                        </div>
-                        <span className="bg-blue-50 text-blue-600 text-[8px] font-bold px-1.5 py-0.5 rounded-md border border-blue-100 uppercase">
-                          {ev.status || "Vaulted"}
-                        </span>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase block">PAN</span>
+                        <span className="text-slate-300 font-medium">{p.pan || "N/A"}</span>
                       </div>
-                      <div className="text-[9.5px] text-slate-500 space-y-0.5">
-                        <p><strong>Storage Locker:</strong> {ev.secure_location || "Central Crypt"}</p>
-                        <p><strong>Case Dossier Reference ID:</strong> {ev.case_id}</p>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase block">Passport</span>
+                        <span className="text-slate-300 font-medium">{p.passport || "N/A"}</span>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl text-center text-slate-500 text-xs">
+                  No suspect records matching current search criteria.
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {Object.values(filteredResults).every((arr) => arr.length === 0) && (
-              <div className="py-12 text-center text-slate-400 text-xs font-medium">
-                No matching records were compiled for &ldquo;{query}&rdquo;
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="py-16 text-center text-slate-400 text-xs bg-white border border-slate-150 rounded-3xl shadow-soft max-w-md mx-auto">
-            <SearchIcon className="mx-auto text-slate-300 mb-3" size={32} />
-            <p className="font-bold text-slate-700">Awaiting Record Query</p>
-            <p className="text-[10px] mt-1 text-slate-400">Enter a subject parameter above to query the central KSP SQL servers.</p>
+            {/* 360° Suspect Dossier Inspection Panel */}
+            <div className="space-y-4">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                360° Target Dossier
+              </h2>
+
+              {selectedSuspect ? (
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl sticky top-24">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div>
+                      <h3 className="text-base font-black text-slate-100">{selectedSuspect.full_name}</h3>
+                      <p className="text-xs text-slate-400">ID: SUSP-2024-{selectedSuspect.person_id}</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+                      {selectedSuspect.risk_score}% Risk
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 text-xs text-slate-300">
+                    <p><strong className="text-slate-400 uppercase text-[9px] block">Address:</strong> {selectedSuspect.address}</p>
+                    <p><strong className="text-slate-400 uppercase text-[9px] block">Mobile:</strong> {selectedSuspect.mobile || "N/A"}</p>
+                    <p><strong className="text-slate-400 uppercase text-[9px] block">Aadhaar ID:</strong> {selectedSuspect.aadhaar || "N/A"}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800">
+                    <Link
+                      to={`/profile/${selectedSuspect.person_id}`}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
+                    >
+                      <span>Open Full Criminal Profile</span>
+                      <ExternalLink size={14} />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl text-center text-slate-500 text-xs">
+                  Click any suspect result on the left to inspect complete 360° dossier.
+                </div>
+              )}
+            </div>
           </div>
         )}
-
       </div>
     </Layout>
   );
