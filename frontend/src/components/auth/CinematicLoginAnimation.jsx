@@ -1,14 +1,21 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Shield } from "lucide-react";
+import { ArrowRight, Shield } from "lucide-react";
 
 export default function CinematicLoginAnimation({ officerName = "Officer", onComplete }) {
   const [progress, setProgress] = useState(0);
   const audioRef = useRef(null);
 
+  const handleManualRedirect = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    if (onComplete) onComplete();
+  };
+
   useEffect(() => {
     const startTime = Date.now();
-    const targetDurationMs = 6000; // Exact 6 seconds minimum duration
+    const targetDurationMs = 6000; // 6 seconds duration
 
     // 1. Play background audio asset
     const audio = new Audio("/ritu_tts_audio.mp3");
@@ -59,19 +66,26 @@ export default function CinematicLoginAnimation({ officerName = "Officer", onCom
 
       {/* Center Container */}
       <div className="relative z-10 flex flex-col items-center text-center p-8 max-w-lg">
-        {/* KSP Logo Badge Glow */}
+        {/* KSP Logo Badge Image */}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1, type: "spring" }}
           className="relative mb-6"
         >
-          <div className="w-28 h-28 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-2xl shadow-blue-500/50 border border-white/20 relative overflow-hidden group">
-            <Shield size={64} className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
-            <div className="absolute inset-0 bg-white/10 animate-pulse" />
+          <div className="w-32 h-32 rounded-3xl bg-slate-900/90 border border-white/20 p-2 shadow-2xl shadow-blue-500/50 relative overflow-hidden flex items-center justify-center">
+            <img
+              src="/ksp_logo.png"
+              alt="KSP Crime Intelligence Platform Logo"
+              className="w-full h-full object-contain filter drop-shadow-[0_0_12px_rgba(59,130,246,0.6)]"
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
+            <div className="absolute inset-0 bg-white/5 animate-pulse" />
           </div>
           {/* Pulsing ring */}
-          <span className="absolute -inset-4 rounded-3xl border-2 border-blue-400/40 animate-ping" />
+          <span className="absolute -inset-3 rounded-3xl border-2 border-blue-400/40 animate-ping" />
         </motion.div>
 
         {/* Greetings */}
@@ -103,12 +117,24 @@ export default function CinematicLoginAnimation({ officerName = "Officer", onCom
         </motion.div>
 
         {/* Audio Progress Bar */}
-        <div className="w-64 h-1.5 bg-slate-800 rounded-full mt-8 overflow-hidden relative border border-slate-700">
+        <div className="w-64 h-1.5 bg-slate-800 rounded-full mt-6 overflow-hidden relative border border-slate-700">
           <div
             style={{ width: `${progress}%` }}
             className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-75"
           />
         </div>
+
+        {/* Manual Redirect Button */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          onClick={handleManualRedirect}
+          className="mt-6 px-5 py-2.5 bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 rounded-2xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-blue-500/20 active:scale-95"
+        >
+          <span>Proceed to Command Center</span>
+          <ArrowRight size={14} />
+        </motion.button>
       </div>
     </motion.div>
   );
