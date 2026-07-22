@@ -21,6 +21,9 @@ import Chat from "./pages/Chat";
 import Officers from "./pages/Officers";
 import Evidence from "./pages/Evidence";
 
+// Sarvam AI Speech-to-Speech Assistant
+import SarvamSpeechAssistant from "./components/ai/SarvamSpeechAssistant";
+
 function App() {
   return (
     <AuthProvider>
@@ -158,6 +161,9 @@ function App() {
           {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* Global Sarvam Speech-to-Speech AI Assistant Floating Widget */}
+        <SarvamSpeechAssistant />
       </BrowserRouter>
     </AuthProvider>
   );

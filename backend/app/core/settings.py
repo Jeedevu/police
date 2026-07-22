@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     # OpenAI (future)
     OPENAI_API_KEY: str = ""
 
+    # ── Sarvam AI Credentials ───────────────────────────────────────────────────
+    SARVAM_API_KEY: str = ""
+    SARVAM_STT_URL: str = "https://api.sarvam.ai/speech-to-text"
+    SARVAM_TTS_URL: str = "https://api.sarvam.ai/text-to-speech"
+
     # ── Security / JWT ────────────────────────────────────────────────────────
     SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION_use_openssl_rand_hex_32"
     ALGORITHM: str = "HS256"

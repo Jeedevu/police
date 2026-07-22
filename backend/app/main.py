@@ -37,6 +37,7 @@ from app.api.files import router as files_router
 from app.api.ocr import router as ocr_router
 from app.api.audio import router as audio_router
 from app.api.notifications import router as notifications_router
+from app.api.sarvam import router as sarvam_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -136,11 +137,12 @@ app.include_router(cases_router)
 app.include_router(evidence_router)
 app.include_router(reports_router)
 
-# Catalyst API Routers
+# Catalyst & Sarvam Speech API Routers
 app.include_router(files_router)
 app.include_router(ocr_router)
 app.include_router(audio_router)
 app.include_router(notifications_router)
+app.include_router(sarvam_router)
 
 # Legacy Analytics & AI Routers
 app.include_router(ai.router)
