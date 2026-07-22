@@ -15,16 +15,16 @@ from app.core.settings import settings
 logger = logging.getLogger(__name__)
 
 SUPPORTED_TTS_LANGUAGES = {
-    "kn-IN": {"name": "Kannada", "speaker": "meera"},
-    "hi-IN": {"name": "Hindi", "speaker": "meera"},
-    "ta-IN": {"name": "Tamil", "speaker": "pavithra"},
-    "te-IN": {"name": "Telugu", "speaker": "mahesh"},
-    "ml-IN": {"name": "Malayalam", "speaker": "arvind"},
-    "mr-IN": {"name": "Marathi", "speaker": "meera"},
-    "bn-IN": {"name": "Bengali", "speaker": "kavya"},
-    "gu-IN": {"name": "Gujarati", "speaker": "meera"},
-    "pa-IN": {"name": "Punjabi", "speaker": "meera"},
-    "en-IN": {"name": "English", "speaker": "meera"},
+    "kn-IN": {"name": "Kannada", "speaker": "roopa"},
+    "hi-IN": {"name": "Hindi", "speaker": "anushka"},
+    "ta-IN": {"name": "Tamil", "speaker": "kavitha"},
+    "te-IN": {"name": "Telugu", "speaker": "kavya"},
+    "ml-IN": {"name": "Malayalam", "speaker": "shruti"},
+    "mr-IN": {"name": "Marathi", "speaker": "shreya"},
+    "bn-IN": {"name": "Bengali", "speaker": "manisha"},
+    "gu-IN": {"name": "Gujarati", "speaker": "vidya"},
+    "pa-IN": {"name": "Punjabi", "speaker": "simran"},
+    "en-IN": {"name": "English", "speaker": "kavya"},
 }
 
 
@@ -54,7 +54,7 @@ class SarvamTTSService:
         target_language_code: str = "kn-IN",
         speaker: Optional[str] = None,
         pace: float = 1.05,
-        model: str = "bulbul:v1",
+        model: str = "bulbul:v3",
     ) -> dict:
         """
         Synthesize text into base64 WAV audio using Sarvam Bulbul V3.
@@ -84,9 +84,7 @@ class SarvamTTSService:
             "inputs": payload_inputs,
             "target_language_code": lang_code,
             "speaker": selected_speaker,
-            "pitch": 0,
             "pace": pace,
-            "loudness": 1.5,
             "speech_sample_rate": 22050,
             "enable_preprocessing": True,
             "model": model,
