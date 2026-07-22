@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Mic,
   MicOff,
@@ -15,7 +16,8 @@ import {
   Maximize2,
   Radio,
   Send,
-  MessageSquare,
+  Move,
+  GripVertical,
 } from "lucide-react";
 import sarvamService, { SARVAM_LANGUAGES } from "../../services/sarvamService";
 
@@ -264,7 +266,11 @@ export default function SarvamSpeechAssistant() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <motion.div
+      drag
+      dragMomentum={false}
+      className="fixed bottom-6 right-6 z-50 flex flex-col items-end cursor-grab active:cursor-grabbing touch-none select-none"
+    >
       {/* Floating Widget Panel */}
       {isOpen && (
         <div
@@ -272,9 +278,10 @@ export default function SarvamSpeechAssistant() {
             isMinimized ? "w-80 h-16" : "w-96 max-w-[calc(100vw-2rem)]"
           }`}
         >
-          {/* Header */}
-          <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+          {/* Draggable Header */}
+          <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between cursor-grab active:cursor-grabbing">
+            <div className="flex items-center gap-2">
+              <GripVertical size={16} className="text-slate-500 hover:text-slate-300" />
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
                 <Sparkles size={16} className="animate-pulse" />
               </div>
@@ -285,7 +292,9 @@ export default function SarvamSpeechAssistant() {
                     Bulbul V3
                   </span>
                 </h3>
-                <p className="text-[10px] text-slate-400">10 Indian Languages • Hands-Free</p>
+                <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                  <Move size={10} className="text-slate-500" /> Draggable • 10 Languages
+                </p>
               </div>
             </div>
 
@@ -310,7 +319,7 @@ export default function SarvamSpeechAssistant() {
           </div>
 
           {!isMinimized && (
-            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto cursor-default">
               {/* Language Selector & Controls */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
@@ -425,7 +434,7 @@ export default function SarvamSpeechAssistant() {
                 <div className="pt-2 flex justify-center">
                   <button
                     onClick={status === "listening" ? stopRecording : startRecording}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform active:scale-95 ${
+                    className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform active:scale-95 cursor-pointer ${
                       status === "listening"
                         ? "bg-red-500 text-white shadow-red-500/50 animate-pulse scale-105"
                         : status === "speaking"
@@ -483,7 +492,7 @@ export default function SarvamSpeechAssistant() {
                 <button
                   type="submit"
                   disabled={!textInput.trim() || status !== "idle"}
-                  className="p-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl transition"
+                  className="p-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl transition cursor-pointer"
                 >
                   <Send size={16} />
                 </button>
@@ -493,20 +502,21 @@ export default function SarvamSpeechAssistant() {
         </div>
       )}
 
-      {/* Floating Trigger Launcher Button */}
+      {/* Floating Trigger Launcher Button (Draggable) */}
       {!isOpen && (
         <button
           onClick={() => {
             setIsOpen(true);
             setIsMinimized(false);
           }}
-          className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-2xl shadow-blue-500/40 hover:scale-105 transition-all duration-300 group relative border border-white/20"
+          className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 text-white flex items-center justify-center shadow-2xl shadow-blue-500/40 hover:scale-105 transition-all duration-300 group relative border border-white/20 cursor-grab active:cursor-grabbing"
+          title="Drag me anywhere or click to open Sarvam Voice Assistant"
         >
           <Mic size={24} className="group-hover:scale-110 transition" />
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950 animate-ping" />
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-950" />
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }
