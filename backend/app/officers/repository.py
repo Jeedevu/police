@@ -61,6 +61,14 @@ class OfficerRepository:
         self.db.commit()
         return officer
 
+    def delete(self, officer_id: int) -> bool:
+        officer = self.get_by_id(officer_id)
+        if not officer:
+            return False
+        self.db.delete(officer)
+        self.db.commit()
+        return True
+
     def get_stats(self) -> dict:
         from sqlalchemy import func
 

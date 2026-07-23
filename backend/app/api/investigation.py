@@ -26,25 +26,27 @@ def investigation(case_id: int):
 
         complainants = conn.execute(
             text("""
-                SELECT *
-                FROM complainantdetails
-                WHERE case_id=:id
+                SELECT c.*, p.mobile AS p_mobile, p.aadhaar AS p_aadhaar, p.address AS p_address
+                FROM complainantdetails c
+                LEFT JOIN personidentity p ON c.name = p.full_name
+                WHERE c.case_id=:id
             """),
             {"id": case_id}
         ).mappings().all()
 
         victims = conn.execute(
             text("""
-                SELECT *
-                FROM victim
-                WHERE case_id=:id
+                SELECT v.*, p.mobile AS p_mobile, p.aadhaar AS p_aadhaar
+                FROM victim v
+                LEFT JOIN personidentity p ON v.name = p.full_name
+                WHERE v.case_id=:id
             """),
             {"id": case_id}
         ).mappings().all()
 
         accused = conn.execute(
             text("""
-                SELECT a.*, p.person_id, p.risk_score
+                SELECT a.*, p.person_id, p.risk_score, p.mobile AS p_mobile, p.aadhaar AS p_aadhaar, p.address AS p_address
                 FROM accused a
                 LEFT JOIN personidentity p ON a.name = p.full_name
                 WHERE a.case_id=:id

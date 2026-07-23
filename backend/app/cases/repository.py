@@ -85,6 +85,84 @@ class CaseRepository:
         for key, val in data.items():
             if val is not None and hasattr(case, key):
                 setattr(case, key, val)
+        if "case_description" in data and data["case_description"]:
+            case.brief_facts = data["case_description"]
+
+        # Complainant fields
+        comp_name = data.get("complainant_name")
+        comp_mobile = data.get("complainant_mobile")
+        comp_aadhaar = data.get("complainant_aadhaar")
+        comp_address = data.get("complainant_address")
+        comp_gender = data.get("complainant_gender")
+        comp_age = data.get("complainant_age")
+
+        if comp_name or comp_mobile or comp_aadhaar or comp_address or comp_gender or comp_age is not None:
+            from app.models.complainant import Complainant
+            from app.models.person_identity import PersonIdentity
+
+            comp = self.db.query(Complainant).filter(Complainant.case_id == case.case_id).first()
+            if not comp:
+                comp = Complainant(case_id=case.case_id)
+                self.db.add(comp)
+            if comp_name: comp.name = comp_name
+            if comp_mobile: comp.mobile = comp_mobile
+            if comp_address: comp.address = comp_address
+            if comp_gender: comp.gender = comp_gender
+            if comp_age is not None:
+                try: comp.age = int(comp_age)
+                except: pass
+
+            target_name = comp_name or comp.name
+            if target_name:
+                person = self.db.query(PersonIdentity).filter(PersonIdentity.full_name == target_name).first()
+                if not person:
+                    person = PersonIdentity(full_name=target_name)
+                    self.db.add(person)
+                if comp_mobile: person.mobile = comp_mobile
+                if comp_aadhaar: person.aadhaar = comp_aadhaar
+                if comp_address: person.address = comp_address
+                if comp_gender: person.gender = comp_gender
+                if comp_age is not None:
+                    try: person.age = int(comp_age)
+                    except: pass
+
+        # Accused fields
+        acc_name = data.get("accused_name")
+        acc_mobile = data.get("accused_mobile")
+        acc_aadhaar = data.get("accused_aadhaar")
+        acc_address = data.get("accused_address")
+        acc_gender = data.get("accused_gender")
+        acc_age = data.get("accused_age")
+
+        if acc_name or acc_mobile or acc_aadhaar or acc_address or acc_gender or acc_age is not None:
+            from app.models.accused import Accused
+            from app.models.person_identity import PersonIdentity
+
+            acc = self.db.query(Accused).filter(Accused.case_id == case.case_id).first()
+            if not acc:
+                acc = Accused(case_id=case.case_id)
+                self.db.add(acc)
+            if acc_name: acc.name = acc_name
+            if acc_address: acc.address = acc_address
+            if acc_gender: acc.gender = acc_gender
+            if acc_age is not None:
+                try: acc.age = int(acc_age)
+                except: pass
+
+            target_name = acc_name or acc.name
+            if target_name:
+                person = self.db.query(PersonIdentity).filter(PersonIdentity.full_name == target_name).first()
+                if not person:
+                    person = PersonIdentity(full_name=target_name)
+                    self.db.add(person)
+                if acc_mobile: person.mobile = acc_mobile
+                if acc_aadhaar: person.aadhaar = acc_aadhaar
+                if acc_address: person.address = acc_address
+                if acc_gender: person.gender = acc_gender
+                if acc_age is not None:
+                    try: person.age = int(acc_age)
+                    except: pass
+
         self.db.commit()
         self.db.refresh(case)
         return case

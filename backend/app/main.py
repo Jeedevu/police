@@ -130,7 +130,8 @@ def _seed_default_admin():
 
 # Authentication & Officer Management
 app.include_router(auth_router)
-app.include_router(officers_router)
+app.include_router(officers_router, prefix="/api/officers")
+app.include_router(officers_router, prefix="/officers")
 
 # Domain Routers
 app.include_router(cases_router)
@@ -148,7 +149,8 @@ app.include_router(sarvam_router)
 app.include_router(ai.router)
 app.include_router(investigation.router)
 app.include_router(cases.router)
-app.include_router(analytics.router)
+app.include_router(analytics.router, prefix="/api/analytics")
+app.include_router(analytics.router, prefix="/analytics")
 app.include_router(dashboard.router)
 app.include_router(fir.router)
 app.include_router(search.router)

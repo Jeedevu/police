@@ -44,7 +44,7 @@ class SarvamSTTService:
         audio_bytes: bytes,
         filename: str = "recording.webm",
         language_code: str = "kn-IN",
-        model: str = "saarika:v2",
+        model: str = "saarika:v2.5",
     ) -> dict:
         """
         Send recorded audio bytes to Sarvam STT API and return transcription.

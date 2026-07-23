@@ -336,13 +336,12 @@ class EvidenceRepository:
             case_id=case_id,
             evidence_type=evidence_type,
             description=description,
-            collected_by=officer_name,
-            collected_date=datetime.now(),
-            status="Collected",
-            # Extended fields (nullable — may not exist in older schemas)
+            file_url=f"/uploads/evidence/{file_id}",
         )
-        # Attach Catalyst metadata if columns exist
         for attr, val in [
+            ("collected_by", officer_name),
+            ("collected_date", datetime.now()),
+            ("status", "Collected"),
             ("catalyst_file_id", file_id),
             ("file_hash", file_hash),
             ("storage_backend", storage_backend),

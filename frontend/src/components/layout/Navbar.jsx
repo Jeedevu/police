@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, Shield, ChevronDown, User, LogOut, Settings, ArrowLeft } from "lucide-react";
+import { Search, Bell, Shield, ChevronDown, User, LogOut, Settings, ArrowLeft, Menu } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 
-export default function Navbar({ onOpenCommandPalette }) {
+export default function Navbar({ onOpenCommandPalette, onToggleMobileSidebar }) {
   const { officer, role, rank, logout, station, district } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,6 +33,14 @@ export default function Navbar({ onOpenCommandPalette }) {
     <header className="bg-white/75 backdrop-blur-md border-b border-slate-150/80 px-6 py-3.5 flex justify-between items-center sticky top-0 z-40">
       {/* Global Navigation & Search Bar */}
       <div className="flex items-center gap-3 flex-1 max-w-xl">
+        {/* Hamburger menu trigger for mobile screen sizes */}
+        <button
+          onClick={onToggleMobileSidebar}
+          className="p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl md:hidden transition-colors mr-2 border border-slate-200"
+        >
+          <Menu size={20} />
+        </button>
+
         {/* ← Back Button */}
         {!isHomePage && (
           <button

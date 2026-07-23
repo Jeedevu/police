@@ -71,8 +71,10 @@ def log_audit_event(
 
 def get_officer_permissions(db: Session, officer: Officer) -> List[str]:
     """Resolve all permission strings for an officer based on their role."""
-    if officer.role and officer.role.upper() == "ADMIN":
-        # Admin gets all permissions
+    role_lower = (officer.role or "").lower()
+    
+    # Any Admin variant gets all permissions
+    if "admin" in role_lower:
         return [
             "Dashboard.View", "Dashboard.Edit", "Cases.Create", "Cases.Read", "Cases.Update", "Cases.Delete",
             "Evidence.Upload", "Evidence.Download", "Evidence.Delete", "Analytics.View", "Analytics.Export",
@@ -84,31 +86,30 @@ def get_officer_permissions(db: Session, officer: Officer) -> List[str]:
         ]
     
     # Try ORM relationship
+    db_perms = []
     if officer.role_rel and officer.role_rel.permissions:
-        perms = [p.name for p in officer.role_rel.permissions]
-        if perms:
-            return perms
-
-    # Query DB by role name if relationship not loaded
-    if officer.role:
+        db_perms = [p.name for p in officer.role_rel.permissions]
+    elif officer.role:
         role_obj = db.query(Role).filter(Role.name == officer.role).first()
         if role_obj and role_obj.permissions:
-            return [p.name for p in role_obj.permissions]
+            db_perms = [p.name for p in role_obj.permissions]
 
-    # Role permission fallbacks
-    role_lower = (officer.role or "").lower()
+    # Base permissions available to all officers
     base_perms = ["Dashboard.View", "Cases.Read", "dashboard", "cases"]
+    if db_perms:
+        base_perms.extend(db_perms)
     
-    if role_lower in ["sub inspector", "si", "inspector", "dsp", "sp", "dig", "igp", "dgp", "admin"]:
+    if any(r in role_lower for r in ["sub inspector", "si", "inspector", "dsp", "sp", "dig", "igp", "dgp"]):
         base_perms.extend(["Evidence.Upload", "Evidence.Download", "Evidence.Tag", "evidence"])
         
-    if role_lower in ["inspector", "dsp", "sp", "dig", "igp", "dgp", "admin"]:
+    if any(r in role_lower for r in ["inspector", "dsp", "sp", "dig", "igp", "dgp"]):
         base_perms.extend(["Analytics.View", "AI.Chat", "AI.GenerateReport", "CrimeMap.View", "analytics", "ai_analytics"])
 
-    if role_lower in ["sp", "dig", "igp", "dgp", "admin"]:
+    if any(r in role_lower for r in ["sp", "dig", "igp", "dgp"]):
         base_perms.extend(["Officers.View", "Officers.Edit", "Investigation.Assign", "Investigation.Close", "users"])
 
-    return base_perms
+    # Deduplicate while preserving list
+    return list(dict.fromkeys(base_perms))
 
 
 # ── JWT utils ─────────────────────────────────────────────────────────────────

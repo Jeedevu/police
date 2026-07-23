@@ -187,6 +187,26 @@ export default function Chat() {
         fetchConversations();
       }
 
+      // AI HeatMap Intent Detector & Router
+      const textLower = promptText.toLowerCase();
+      if (textLower.includes("hotspot") || textLower.includes("heatmap") || (textLower.includes("show") && (textLower.includes("theft") || textLower.includes("murder") || textLower.includes("crime")))) {
+        let crime = "All";
+        let city = "All";
+        if (textLower.includes("theft")) crime = "Theft";
+        if (textLower.includes("murder")) crime = "Murder";
+        if (textLower.includes("robbery")) crime = "Robbery";
+        if (textLower.includes("cyber")) crime = "Cyber Crime";
+
+        if (textLower.includes("mysuru") || textLower.includes("mysore")) city = "Mysuru";
+        if (textLower.includes("bengaluru") || textLower.includes("bangalore")) city = "Bengaluru";
+        if (textLower.includes("hubballi") || textLower.includes("hubli")) city = "Hubballi";
+        if (textLower.includes("mangaluru") || textLower.includes("mangalore")) city = "Mangaluru";
+
+        setTimeout(() => {
+          navigate(`/heatmap?crime_type=${encodeURIComponent(crime)}&city=${encodeURIComponent(city)}`);
+        }, 1200);
+      }
+
       // Audio Playback
       if (chatRes.tts?.audio_urls?.[0] && autoSpeak && !isMuted) {
         const url = chatRes.tts.audio_urls[0];

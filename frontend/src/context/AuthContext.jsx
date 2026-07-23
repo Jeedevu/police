@@ -59,10 +59,14 @@ export function AuthProvider({ children }) {
   const hasPermission = useCallback(
     (permissionKey) => {
       if (!permissionKey) return true;
-      if (officer?.role?.toLowerCase() === "admin") return true;
+      const roleLower = (officer?.role || "").toLowerCase();
+      if (roleLower.includes("admin")) return true;
+
+      // Dashboard is accessible to all authenticated officers
+      const keyLower = String(permissionKey).toLowerCase();
+      if (keyLower === "dashboard" || keyLower === "dashboard.view") return true;
 
       const currentPerms = permissions.length > 0 ? permissions : authService.getPermissions();
-      const keyLower = String(permissionKey).toLowerCase();
 
       return currentPerms.some((p) => String(p).toLowerCase() === keyLower);
     },
@@ -73,8 +77,8 @@ export function AuthProvider({ children }) {
   const hasRole = useCallback(
     (...allowedRoles) => {
       if (!officer?.role) return false;
-      if (officer.role.toLowerCase() === "admin") return true;
       const officerRoleLower = officer.role.toLowerCase();
+      if (officerRoleLower.includes("admin")) return true;
       return allowedRoles.some((r) => r.toLowerCase() === officerRoleLower);
     },
     [officer]

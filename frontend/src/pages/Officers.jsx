@@ -79,8 +79,9 @@ export default function Officers() {
   const fetchOfficers = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/officers");
-      setOfficers(res.data || []);
+      const res = await api.get("/api/officers");
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setOfficers(list);
     } catch (err) {
       console.error("Failed to fetch officers:", err);
       // Fallback mock officers if endpoint fails
@@ -129,20 +130,31 @@ export default function Officers() {
         ...newOfficer,
         username: creds.username,
         password: creds.password,
+        badge_number: newOfficer.badge_number || `KSP-${Math.floor(1000 + Math.random() * 9000)}`,
       };
-      await api.post("/officers", payload);
+      await api.post("/api/officers", payload);
       setGeneratedCreds(creds);
       fetchOfficers();
+      // Reset form
+      setNewOfficer({
+        full_name: "",
+        email: "",
+        badge_number: "",
+        role: "Inspector",
+        rank: "Inspector",
+        station: "Central HQ",
+        district: "Bengaluru",
+      });
     } catch (err) {
-      console.error(err);
-      // Display generated creds in fallback mode
-      setGeneratedCreds(creds);
+      console.error("Failed to create officer:", err);
+      const msg = err.response?.data?.detail || "Failed to create officer in database";
+      alert(`Error: ${msg}`);
     }
   };
 
   const toggleOfficerStatus = async (officerId, currentStatus) => {
     try {
-      await api.put(`/officers/${officerId}`, { is_active: !currentStatus });
+      await api.put(`/api/officers/${officerId}`, { is_active: !currentStatus });
       setOfficers((prev) =>
         prev.map((o) => (o.id === officerId ? { ...o, is_active: !currentStatus } : o))
       );
@@ -154,7 +166,7 @@ export default function Officers() {
   const handleDeleteOfficer = async (officerId) => {
     if (!window.confirm("Are you sure you want to delete this officer record?")) return;
     try {
-      await api.delete(`/officers/${officerId}`);
+      await api.delete(`/api/officers/${officerId}`);
       setOfficers((prev) => prev.filter((o) => o.id !== officerId));
     } catch (err) {
       console.error(err);

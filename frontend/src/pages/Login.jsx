@@ -44,7 +44,7 @@ export default function Login() {
     } catch (err) {
       setError(
         err?.response?.data?.detail ||
-          "Invalid credentials or account is locked. Please try again."
+        "Invalid credentials or account is locked. Please try again."
       );
       setLoading(false);
     }
@@ -120,6 +120,14 @@ export default function Login() {
             </motion.div>
           </div>
 
+          {/* Network Warning Alert */}
+          <div className="mb-4 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium flex items-start gap-2 leading-relaxed">
+            <span className="text-sm mt-0.5">⚠️</span>
+            <span>
+              <strong>Network Notice:</strong> If you experience connectivity issues, please try logging in 2 or 3 times. You may occasionally encounter errors due to network instability, Allways login with Admin Account.
+            </span>
+          </div>
+
           {/* Error */}
           <AnimatePresence>
             {error && (
@@ -188,11 +196,10 @@ export default function Login() {
               <label className="flex items-center gap-2 cursor-pointer group">
                 <div
                   onClick={() => setRememberMe(!rememberMe)}
-                  className={`w-5 h-5 rounded border flex items-center justify-center transition-all cursor-pointer ${
-                    rememberMe
+                  className={`w-5 h-5 rounded border flex items-center justify-center transition-all cursor-pointer ${rememberMe
                       ? "bg-blue-600 border-blue-600"
                       : "border-white/20 bg-white/5"
-                  }`}
+                    }`}
                 >
                   {rememberMe && <span className="text-white text-xs">✓</span>}
                 </div>

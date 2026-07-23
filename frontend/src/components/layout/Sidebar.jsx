@@ -16,11 +16,13 @@ import {
   Layers,
   Users,
   AlertOctagon,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Flame,
+  X
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-export default function Sidebar({ isCollapsed, onToggle }) {
+export default function Sidebar({ isCollapsed, onToggle, isMobile = false }) {
   const location = useLocation();
   const currentPath = location.pathname;
   const { hasPermission, hasRole, isAdmin, role, rank } = useAuth();
@@ -30,6 +32,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
   // Define full menu matrix
   const allMenuItems = [
     { name: "Dashboard", icon: <LayoutDashboard size={19} />, path: "/", permission: "dashboard" },
+    { name: "Crime Heat Map", icon: <Flame size={19} />, path: "/heatmap", badge: "HOT", permission: "analytics", accent: "#EF4444" },
     { name: "AI Chat", icon: <Bot size={19} />, path: "/chat", badge: "AI", permission: "ai_analytics", accent: "#4F46E5" },
     { name: "AI Assistant", icon: <Bot size={19} />, path: "/investigation", badge: "PRO", permission: "ai_analytics", accent: "#2563EB" },
     { name: "Cases Dossier", icon: <FolderLock size={19} />, path: "/cases", permission: "cases" },
@@ -40,7 +43,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
   ];
 
   const allSecondaryItems = [
-    { name: "Suspect Profiles", icon: <UserSquare2 size={19} />, path: "/profile/1", permission: "cases", accent: "#F59E0B" },
+    { name: "Suspect Profiles", icon: <UserSquare2 size={19} />, path: "/profile", permission: "cases", accent: "#F59E0B" },
     { name: "Evidence Vault", icon: <Layers size={19} />, path: "/evidence", permission: "evidence" },
     { name: "Officers Management", icon: <Users size={19} />, path: "/officers", permission: "users", accent: "#2563EB" },
     { name: "Threat Matrix", icon: <AlertOctagon size={19} />, path: "/analytics?tab=predictions", permission: "analytics", accent: "#EF4444" },
@@ -103,12 +106,21 @@ export default function Sidebar({ isCollapsed, onToggle }) {
         </div>
 
         {/* Collapsible toggle button */}
-        <button
-          onClick={onToggle}
-          className="absolute -right-3 top-[52px] w-6 h-6 flex items-center justify-center bg-[#162235] border border-white/10 hover:border-[#2563EB]/50 hover:bg-[#1a2942] text-[#64748B] hover:text-[#38BDF8] rounded-full shadow-lg z-10 transition-all"
-        >
-          {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-        </button>
+        {!isMobile ? (
+          <button
+            onClick={onToggle}
+            className="absolute -right-3 top-[52px] w-6 h-6 flex items-center justify-center bg-[#162235] border border-white/10 hover:border-[#2563EB]/50 hover:bg-[#1a2942] text-[#64748B] hover:text-[#38BDF8] rounded-full shadow-lg z-10 transition-all"
+          >
+            {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          </button>
+        ) : (
+          <button
+            onClick={onToggle}
+            className="absolute right-4 top-[50px] p-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+          >
+            <X size={14} />
+          </button>
+        )}
 
         {/* Main Menu Links */}
         <nav className="p-3 space-y-1 mt-4">

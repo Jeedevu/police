@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api/cases", tags=["Cases"])
 
 
 @router.get("", response_model=CaseListResponse)
+@router.get("/", response_model=CaseListResponse)
 def list_cases(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -101,7 +102,7 @@ def delete_case(
     case_id: int,
     db: Session = Depends(get_db),
     jurisdiction: dict = Depends(get_jurisdiction_filter),
-    _: Officer = Depends(require_min_role("SP")),
+    _: Officer = Depends(require_min_role("Sub Inspector")),
 ):
     """Delete a case. SP+ access required."""
     repo = CaseRepository(db)

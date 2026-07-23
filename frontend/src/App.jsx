@@ -11,6 +11,7 @@ import Search from "./pages/Search";
 import Network from "./pages/Network";
 import Reports from "./pages/Reports";
 import CriminalProfile from "./pages/CriminalProfile";
+import HeatMap from "./pages/HeatMap";
 
 // Auth & Security Pages
 import Login from "./pages/Login";
@@ -84,6 +85,14 @@ function App() {
             }
           />
           <Route
+            path="/heatmap"
+            element={
+              <ProtectedRoute permission="analytics">
+                <HeatMap />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/investigation"
             element={
               <ProtectedRoute permission="cases">
@@ -128,6 +137,22 @@ function App() {
             element={
               <ProtectedRoute permission="analytics">
                 <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute permission="cases">
+                <CriminalProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profiles"
+            element={
+              <ProtectedRoute permission="cases">
+                <CriminalProfile />
               </ProtectedRoute>
             }
           />

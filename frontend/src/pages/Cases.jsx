@@ -19,10 +19,53 @@ import {
   StickyNote, 
   AlertCircle,
   FileCheck,
-  CheckSquare
+  CheckSquare,
+  Pencil,
+  X,
+  Phone,
+  CreditCard
 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import api from "../services/api";
+
+const CRIME_TYPES = [
+  "Theft / Larceny",
+  "Robbery / Dacoity",
+  "Cybercrime",
+  "Homicide / Murder",
+  "Assault / Bodily Harm",
+  "Narcotics / NDPS",
+  "Financial Fraud / Cheating",
+  "Vehicle Theft",
+  "Extortion",
+  "IPC 354 (Molestation)",
+  "IPC 302 (Murder)",
+  "IPC 379 (Theft)",
+  "IPC 279 (Rash Driving)",
+  "Other Offence"
+];
+
+const DISTRICTS = [
+  "Bengaluru City",
+  "Mysuru City",
+  "Mangaluru City",
+  "Hubballi-Dharwad",
+  "Belagavi",
+  "Kalaburagi",
+  "Shivamogga",
+  "Ballari",
+  "Davangere",
+  "Tumakuru"
+];
+
+const CASE_STATUSES = [
+  "Under Investigation",
+  "Investigation",
+  "Pending Chargesheet",
+  "Under Trial",
+  "Solved",
+  "Closed"
+];
 
 export default function Cases() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,6 +81,30 @@ export default function Cases() {
   const [notes, setNotes] = useState("");
   const [similarCases, setSimilarCases] = useState(null);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+
+  // Modal edit state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    crime_type: "",
+    district: "",
+    police_station: "",
+    case_status: "",
+    case_description: "",
+    // Complainant fields
+    complainant_name: "",
+    complainant_mobile: "",
+    complainant_aadhaar: "",
+    complainant_gender: "Male",
+    complainant_age: "",
+    complainant_address: "",
+    // Accused fields
+    accused_name: "",
+    accused_mobile: "",
+    accused_aadhaar: "",
+    accused_gender: "Male",
+    accused_age: "",
+    accused_address: "",
+  });
 
   // Load cases list
   useEffect(() => {
@@ -96,6 +163,59 @@ export default function Cases() {
     if (!selectedCaseId) return;
     localStorage.setItem(`notes-${selectedCaseId}`, notes);
     alert("Officer notes updated in secure local vault!");
+  };
+
+  // Open full edit modal prefilled with current case & suspect/complainant data
+  const openEditDossierModal = () => {
+    if (!caseDetails?.case) return;
+    const c = caseDetails.case;
+    const comp = caseDetails.complainants?.[0] || {};
+    const acc = caseDetails.accused?.[0] || {};
+
+    setEditFormData({
+      crime_type: c.crime_type || "",
+      district: c.district || "",
+      police_station: c.police_station || "",
+      case_status: c.case_status || "Under Investigation",
+      case_description: c.case_description || c.brief_facts || "",
+      complainant_name: comp.name || "",
+      complainant_mobile: comp.mobile || comp.p_mobile || "",
+      complainant_aadhaar: comp.p_aadhaar || "",
+      complainant_gender: comp.gender || "Male",
+      complainant_age: comp.age || "",
+      complainant_address: comp.address || comp.p_address || "",
+      accused_name: acc.name || "",
+      accused_mobile: acc.p_mobile || "",
+      accused_aadhaar: acc.p_aadhaar || "",
+      accused_gender: acc.gender || "Male",
+      accused_age: acc.age || "",
+      accused_address: acc.address || acc.p_address || "",
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle saving dossier updates
+  const handleUpdateDossier = async (e) => {
+    e.preventDefault();
+    if (!selectedCaseId) return;
+    try {
+      await api.put(`/api/cases/${selectedCaseId}`, editFormData)
+        .catch(() => api.put(`/cases/${selectedCaseId}`, editFormData));
+      setShowEditModal(false);
+      
+      // Reload case details and cases list
+      setLoadingDetails(true);
+      const res = await api.get(`/investigation/${selectedCaseId}`);
+      setCaseDetails(res.data);
+      setLoadingDetails(false);
+
+      // Refresh list
+      const listRes = await api.get("/cases/");
+      setCasesList(listRes.data || []);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update dossier details: " + (err.response?.data?.detail || err.message));
+    }
   };
 
   const filteredCases = casesList.filter(
@@ -199,7 +319,16 @@ export default function Cases() {
                     <span className="flex items-center gap-1"><Calendar size={12} /> Registered on {caseDetails.case.crime_date || "Unknown Date"}</span>
                   </div>
                 </div>
-                <div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={openEditDossierModal}
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Pencil size={14} />
+                    <span>Edit Case & Suspect Data</span>
+                  </button>
+
                   <span className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border ${
                     caseDetails.case.case_status === "Solved" || caseDetails.case.case_status === "Closed"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -249,7 +378,7 @@ export default function Cases() {
                         <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4">
                           <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Brief Incident Summary</h4>
                           <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                            {caseDetails.case.case_description || "No official incident transcript was registered for this case folder."}
+                            {caseDetails.case.brief_facts || caseDetails.case.case_description || "No official incident transcript was registered for this case folder."}
                           </p>
                         </div>
                         
@@ -295,8 +424,18 @@ export default function Cases() {
                                     <span>{acc.name}</span>
                                     <ChevronRight size={13} />
                                   </Link>
-                                  <p className="text-[10px] text-slate-400 mt-1 font-medium">Age: {acc.age || "N/A"} | Gender: {acc.gender || "N/A"}</p>
-                                  <p className="text-[10px] text-slate-500 mt-0.5"><MapPin size={11} className="inline mr-1" />{acc.address || "Address not catalogued"}</p>
+                                  <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                                    Age: {acc.age || "N/A"} | Gender: {acc.gender || "N/A"}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-600 mt-1 font-medium">
+                                    <span className="flex items-center gap-1 text-slate-700 font-bold">
+                                      <Phone size={11} className="text-blue-500" /> {acc.p_mobile || acc.mobile || "No Mobile"}
+                                    </span>
+                                    <span className="flex items-center gap-1 text-slate-700 font-bold">
+                                      <CreditCard size={11} className="text-emerald-500" /> Aadhaar: {acc.p_aadhaar || "Not Catalogued"}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-500 mt-1"><MapPin size={11} className="inline mr-1" />{acc.p_address || acc.address || "Address not catalogued"}</p>
                                 </div>
                               </div>
                               <span className="text-[9px] font-black text-red-600 bg-red-50 border border-red-150 px-2.5 py-1 rounded-full shrink-0">
@@ -310,10 +449,36 @@ export default function Cases() {
                       </div>
                     )}
 
-                    {/* Victims Tab */}
+                    {/* Victims / Complainants Tab */}
                     {activeTab === "victims" && (
                       <div className="space-y-4">
-                        {caseDetails.victims && caseDetails.victims.length > 0 ? (
+                        {caseDetails.complainants && caseDetails.complainants.length > 0 ? (
+                          caseDetails.complainants.map((vic, index) => (
+                            <div key={index} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center text-blue-500">
+                                  <User size={18} />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-slate-800">{vic.name}</p>
+                                  <p className="text-[9px] text-slate-500 mt-1">Age: {vic.age || "N/A"} | Gender: {vic.gender || "N/A"}</p>
+                                  <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-600 mt-1 font-medium">
+                                    <span className="flex items-center gap-1 text-slate-700 font-bold">
+                                      <Phone size={11} className="text-blue-500" /> {vic.p_mobile || vic.mobile || "No Mobile"}
+                                    </span>
+                                    <span className="flex items-center gap-1 text-slate-700 font-bold">
+                                      <CreditCard size={11} className="text-emerald-500" /> Aadhaar: {vic.p_aadhaar || "Not Catalogued"}
+                                    </span>
+                                  </div>
+                                  <p className="text-[9px] text-slate-400 mt-0.5"><MapPin size={11} className="inline" /> {vic.p_address || vic.address || "N/A"}</p>
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
+                                Complainant
+                              </span>
+                            </div>
+                          ))
+                        ) : caseDetails.victims && caseDetails.victims.length > 0 ? (
                           caseDetails.victims.map((vic, index) => (
                             <div key={index} className="bg-white border border-slate-150 p-4 rounded-2xl shadow-soft flex items-center gap-4">
                               <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center text-blue-500">
@@ -327,7 +492,7 @@ export default function Cases() {
                             </div>
                           ))
                         ) : (
-                          <div className="text-center py-8 text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-2xl">No victim logs associated with this case folder.</div>
+                          <div className="text-center py-8 text-xs text-slate-400 bg-slate-50 border border-slate-100 rounded-2xl">No complainant or victim logs associated with this case folder.</div>
                         )}
                       </div>
                     )}
@@ -391,7 +556,6 @@ export default function Cases() {
                         {caseDetails.timeline && caseDetails.timeline.length > 0 ? (
                           caseDetails.timeline.map((tl, index) => (
                             <div key={index} className="relative">
-                              {/* Pulse point */}
                               <span className="absolute -left-[30px] top-1 flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
@@ -475,6 +639,265 @@ export default function Cases() {
         </div>
 
       </div>
+
+      {/* Edit Dossier Full Modal */}
+      {showEditModal && caseDetails && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            >
+              <X size={18} />
+            </button>
+
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Pencil size={18} className="text-blue-400" />
+              Edit Case Dossier — {caseDetails.case.fir_number}
+            </h3>
+
+            <form onSubmit={handleUpdateDossier} className="space-y-4 text-xs">
+              {/* SECTION 1: FIR & Incident Details */}
+              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">1. Incident & FIR Meta</h4>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Crime Type / Offence Head</label>
+                    <select
+                      value={editFormData.crime_type}
+                      onChange={(e) => setEditFormData({ ...editFormData, crime_type: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    >
+                      {CRIME_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Investigation Status</label>
+                    <select
+                      value={editFormData.case_status}
+                      onChange={(e) => setEditFormData({ ...editFormData, case_status: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    >
+                      {CASE_STATUSES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">District</label>
+                    <select
+                      value={editFormData.district}
+                      onChange={(e) => setEditFormData({ ...editFormData, district: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    >
+                      {DISTRICTS.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Police Station</label>
+                    <input
+                      type="text"
+                      value={editFormData.police_station}
+                      onChange={(e) => setEditFormData({ ...editFormData, police_station: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Brief Incident Summary / Facts</label>
+                  <textarea
+                    rows={3}
+                    value={editFormData.case_description}
+                    onChange={(e) => setEditFormData({ ...editFormData, case_description: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                  ></textarea>
+                </div>
+              </div>
+
+              {/* SECTION 2: Complainant Information */}
+              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">2. Complainant & Victim Info</h4>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Complainant Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Ramesh Kumar"
+                      value={editFormData.complainant_name}
+                      onChange={(e) => setEditFormData({ ...editFormData, complainant_name: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Mobile Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +91 9876543210"
+                      value={editFormData.complainant_mobile}
+                      onChange={(e) => setEditFormData({ ...editFormData, complainant_mobile: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Aadhaar Number</label>
+                    <input
+                      type="text"
+                      placeholder="12-digit Aadhaar"
+                      value={editFormData.complainant_aadhaar}
+                      onChange={(e) => setEditFormData({ ...editFormData, complainant_aadhaar: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Age</label>
+                    <input
+                      type="number"
+                      placeholder="Age"
+                      value={editFormData.complainant_age}
+                      onChange={(e) => setEditFormData({ ...editFormData, complainant_age: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Gender</label>
+                    <select
+                      value={editFormData.complainant_gender}
+                      onChange={(e) => setEditFormData({ ...editFormData, complainant_gender: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Residential Address</label>
+                  <input
+                    type="text"
+                    placeholder="Full residential address"
+                    value={editFormData.complainant_address}
+                    onChange={(e) => setEditFormData({ ...editFormData, complainant_address: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                  />
+                </div>
+              </div>
+
+              {/* SECTION 3: Accused Suspect Information */}
+              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 className="text-[11px] font-bold text-rose-400 uppercase tracking-wider">3. Accused Suspect Info</h4>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Suspect Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Suresh Gowda"
+                      value={editFormData.accused_name}
+                      onChange={(e) => setEditFormData({ ...editFormData, accused_name: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Mobile Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +91 9988776655"
+                      value={editFormData.accused_mobile}
+                      onChange={(e) => setEditFormData({ ...editFormData, accused_mobile: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Aadhaar Number</label>
+                    <input
+                      type="text"
+                      placeholder="12-digit Aadhaar"
+                      value={editFormData.accused_aadhaar}
+                      onChange={(e) => setEditFormData({ ...editFormData, accused_aadhaar: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Age</label>
+                    <input
+                      type="number"
+                      placeholder="Age"
+                      value={editFormData.accused_age}
+                      onChange={(e) => setEditFormData({ ...editFormData, accused_age: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Gender</label>
+                    <select
+                      value={editFormData.accused_gender}
+                      onChange={(e) => setEditFormData({ ...editFormData, accused_gender: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Known Address / Hideout</label>
+                  <input
+                    type="text"
+                    placeholder="Last known address or location"
+                    value={editFormData.accused_address}
+                    onChange={(e) => setEditFormData({ ...editFormData, accused_address: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 cursor-pointer"
+                >
+                  Save All Dossier Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

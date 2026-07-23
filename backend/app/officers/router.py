@@ -25,7 +25,7 @@ from app.officers.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/officers", tags=["Officers"])
+router = APIRouter(prefix="", tags=["Officers"])
 
 
 @router.get("", response_model=dict)
@@ -93,15 +93,34 @@ def get_officer(
 def create_new_officer(
     data: OfficerCreate,
     db: Session = Depends(get_db),
-    _: Officer = Depends(require_min_role("SP")),
+    _: Officer = Depends(require_min_role("Sub Inspector")),
 ):
-    """Create a new officer account. SP+ access required."""
+    """Create a new officer account."""
+    import random
     from app.auth.service import get_officer_by_email
     if get_officer_by_email(db, data.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    o = create_officer(db, data.model_dump())
+    officer_data = data.model_dump()
+    if not officer_data.get("badge_number"):
+        officer_data["badge_number"] = f"KSP-{random.randint(1000, 9999)}"
+
+    o = create_officer(db, officer_data)
     return OfficerDetail.model_validate(o)
+
+
+@router.delete("/{officer_id}")
+def delete_officer(
+    officer_id: int,
+    db: Session = Depends(get_db),
+    _: Officer = Depends(require_min_role("Sub Inspector")),
+):
+    """Delete an officer record from database."""
+    repo = OfficerRepository(db)
+    success = repo.delete(officer_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Officer not found")
+    return {"success": True, "message": f"Officer {officer_id} deleted successfully"}
 
 
 @router.put("/{officer_id}", response_model=OfficerDetail)

@@ -10,6 +10,7 @@ export default function Layout({ children }) {
     return saved === "true";
   });
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
@@ -45,19 +46,54 @@ export default function Layout({ children }) {
         />
       </div>
 
-      {/* Collapsible Sidebar */}
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed} 
-        onToggle={toggleSidebar} 
-      />
+      {/* Desktop Sidebar (hidden on mobile) */}
+      <div className="hidden md:block h-full">
+        <Sidebar 
+          isCollapsed={isSidebarCollapsed} 
+          onToggle={toggleSidebar} 
+        />
+      </div>
+
+      {/* Mobile Sidebar Overlay/Drawer */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="fixed inset-0 bg-black/60 z-50 md:hidden"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-64 z-50 md:hidden"
+            >
+              <Sidebar 
+                isCollapsed={false} 
+                onToggle={() => setIsMobileSidebarOpen(false)} 
+                isMobile={true}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Pane */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative z-10">
         {/* Top Navbar */}
-        <Navbar onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
+        <Navbar 
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} 
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+        />
 
         {/* Dynamic Page Container */}
-        <main className="flex-1 overflow-auto p-6 relative">
+        <main className="flex-1 overflow-auto p-4 md:p-6 relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={window.location.pathname} // Triggers animation on route changes

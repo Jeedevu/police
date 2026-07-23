@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactFlow, { MiniMap, Controls, Background } from "reactflow";
 import "reactflow/dist/style.css";
@@ -252,21 +253,41 @@ export default function Analytics() {
 
               {/* Crime Heatmap Tab */}
               {activeSection === "heatmap" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {districts.map((d, index) => {
-                    const heat = getHeatColor(d.total_cases);
-                    return (
-                      <div key={index} className={`border rounded-2xl p-5 shadow-soft transition-all duration-300 ${heat.bg} ${heat.border} flex justify-between items-center`}>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-800">{d.district} Unit</h4>
-                          <p className="text-[10px] text-slate-400 mt-1 font-semibold">Incident Record count: <span className="text-slate-700 font-extrabold">{d.total_cases} files</span></p>
-                        </div>
-                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-xl border border-transparent bg-white/70 shadow-sm shrink-0 ${heat.text}`}>
-                          {heat.intensity}
-                        </span>
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-primary p-6 rounded-3xl text-white shadow-premium flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-300">
+                        <MapPin size={24} className="animate-bounce" />
                       </div>
-                    );
-                  })}
+                      <div>
+                        <h3 className="text-base font-black tracking-tight">KSP Full Interactive GIS Heat Map Engine</h3>
+                        <p className="text-slate-300 text-xs mt-0.5">Explore real-time 3D spatial crime density, hotspot AI inspector, custom overlays, and PDF exports.</p>
+                      </div>
+                    </div>
+                    <Link
+                      to="/heatmap"
+                      className="px-5 py-2.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded-xl text-xs font-black transition shadow-lg shadow-cyan-400/20 flex items-center gap-2 shrink-0"
+                    >
+                      <span>Launch Heat Map Studio</span> &rarr;
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {districts.map((d, index) => {
+                      const heat = getHeatColor(d.total_cases);
+                      return (
+                        <div key={index} className={`border rounded-2xl p-5 shadow-soft transition-all duration-300 ${heat.bg} ${heat.border} flex justify-between items-center`}>
+                          <div>
+                            <h4 className="text-xs font-black text-slate-800">{d.district} Unit</h4>
+                            <p className="text-[10px] text-slate-400 mt-1 font-semibold">Incident Record count: <span className="text-slate-700 font-extrabold">{d.total_cases} files</span></p>
+                          </div>
+                          <span className={`text-[9px] font-black px-2.5 py-1 rounded-xl border border-transparent bg-white/70 shadow-sm shrink-0 ${heat.text}`}>
+                            {heat.intensity}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

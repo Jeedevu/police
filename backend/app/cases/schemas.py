@@ -33,8 +33,25 @@ class CaseUpdate(BaseModel):
     district: Optional[str] = None
     police_station: Optional[str] = None
     brief_facts: Optional[str] = None
+    case_description: Optional[str] = None
     latitude: Optional[Decimal] = None
     longitude: Optional[Decimal] = None
+    
+    # Complainant fields
+    complainant_name: Optional[str] = None
+    complainant_mobile: Optional[str] = None
+    complainant_aadhaar: Optional[str] = None
+    complainant_address: Optional[str] = None
+    complainant_gender: Optional[str] = None
+    complainant_age: Optional[int] = None
+
+    # Accused fields
+    accused_name: Optional[str] = None
+    accused_mobile: Optional[str] = None
+    accused_aadhaar: Optional[str] = None
+    accused_address: Optional[str] = None
+    accused_gender: Optional[str] = None
+    accused_age: Optional[int] = None
 
 
 class CaseOut(CaseBase):
