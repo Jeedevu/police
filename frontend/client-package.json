@@ -1,0 +1,9 @@
+{
+  "name": "ksp-frontend",
+  "client": "frontend",
+  "display_name": "KSP Crime AI Frontend",
+  "version": "1.0.0",
+  "homepage": "index.html",
+  "build_command": "npm run build",
+  "web": "dist"
+}

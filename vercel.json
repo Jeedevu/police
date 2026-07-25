@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "comment": "Root vercel.json — the Vercel project is configured to deploy the frontend/ subdirectory. See frontend/vercel.json for the actual build config. The backend is deployed separately on Railway (see backend/railway.toml).",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "cd frontend && npm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

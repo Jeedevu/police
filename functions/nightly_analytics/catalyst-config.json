@@ -1,0 +1,6 @@
+{
+  "name": "nightly_analytics",
+  "type": "BasicIO",
+  "stack": "python3.11",
+  "execution": "handler.main"
+}
