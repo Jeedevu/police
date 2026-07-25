@@ -27,6 +27,17 @@ import Layout from "../components/layout/Layout";
 import StatsCard from "../components/dashboard/StatsCard";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet Default Marker Icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 import {
   ResponsiveContainer,
   AreaChart,
@@ -90,6 +101,7 @@ export default function Dashboard() {
   const [monthly, setMonthly] = useState([]);
   const [recentCases, setRecentCases] = useState([]);
   const [alerts, setAlerts] = useState(null);
+  const [heatmapPoints, setHeatmapPoints] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Case Modals state
@@ -126,13 +138,14 @@ export default function Dashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsRes, trendsRes, districtsRes, monthlyRes, casesRes, alertsRes] = await Promise.all([
+      const [statsRes, trendsRes, districtsRes, monthlyRes, casesRes, alertsRes, heatmapRes] = await Promise.all([
         api.get("/dashboard/stats"),
         api.get("/analytics/crime-trends"),
         api.get("/analytics/districts"),
         api.get("/analytics/monthly"),
         api.get("/api/cases").catch(() => api.get("/cases/")),
         api.get("/analytics/alerts"),
+        api.get("/api/analytics/heatmap").catch(() => api.get("/analytics/heatmap")),
       ]);
 
       setStats(statsRes.data);
@@ -140,6 +153,7 @@ export default function Dashboard() {
       setDistricts(districtsRes.data);
       setMonthly(monthlyRes.data);
       setAlerts(alertsRes.data || {});
+      setHeatmapPoints(Array.isArray(heatmapRes?.data) ? heatmapRes.data : []);
       
       const casesList = Array.isArray(casesRes.data) ? casesRes.data : (casesRes.data?.data || []);
       const sortedCases = casesList.slice(-6).reverse();
@@ -251,6 +265,14 @@ export default function Dashboard() {
   };
 
   const COLORS = ["#3B82F6", "#06B6D4", "#10B981", "#EF4444", "#8B5CF6", "#F59E0B"];
+
+  const getHeatmapColor = (weight, crimeType) => {
+    const c = (crimeType || "").toLowerCase();
+    if (c.includes("murder") || c.includes("robbery") || weight >= 20) return "#EF4444";
+    if (c.includes("cyber") || c.includes("fraud") || weight >= 15) return "#F97316";
+    if (c.includes("assault") || c.includes("drug") || weight >= 12) return "#F59E0B";
+    return "#3B82F6";
+  };
 
   const { officer, rank, role, badgeNumber, station, district } = useAuth();
   const officerName = officer?.full_name || "Officer";
@@ -448,38 +470,84 @@ export default function Dashboard() {
           
           {/* Geographic incidents */}
           <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-soft flex flex-col h-[420px]">
-            <div className="mb-3">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Jurisdiction Hotspots</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Top regional distribution in Karnataka State</p>
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Jurisdiction Hotspots</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">Top regional distribution in Karnataka State</p>
+              </div>
+              <Link
+                to="/heatmap"
+                className="text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/40 px-2.5 py-1 rounded-xl flex items-center gap-1 transition-all shrink-0"
+              >
+                <Flame size={13} className="animate-pulse" />
+                <span>Heat Map</span>
+              </Link>
             </div>
-            <div className="flex-grow rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative">
-              <div className="absolute inset-0 bg-slate-50 flex items-center justify-center overflow-hidden">
-                <svg className="w-full h-full text-slate-200/60" viewBox="0 0 500 500" fill="none">
-                  <path d="M150 100 Q 250 80, 350 120 T 450 300 Q 300 400, 150 350 Z" fill="#F1F5F9" stroke="#E2E8F0" strokeWidth="2" />
-                  <path d="M220 180 Q 280 150, 320 220" stroke="#CBD5E1" strokeWidth="1" strokeDasharray="3 3" />
-                  
-                  <circle cx="200" cy="150" r="15" fill="#3B82F6" className="opacity-25" />
-                  <circle cx="200" cy="150" r="4" fill="#2563EB" />
 
-                  <circle cx="340" cy="220" r="25" fill="#EF4444" className="opacity-15" />
-                  <circle cx="340" cy="220" r="6" fill="#EF4444" />
-                  
-                  <circle cx="280" cy="290" r="18" fill="#F59E0B" className="opacity-20" />
-                  <circle cx="280" cy="290" r="5" fill="#D97706" />
+            <div className="flex-grow rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative z-0">
+              {heatmapPoints.length > 0 ? (
+                <MapContainer
+                  center={[15.3173, 75.7139]}
+                  zoom={6.2}
+                  scrollWheelZoom={false}
+                  style={{ width: "100%", height: "100%", minHeight: "300px" }}
+                >
+                  <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution="&copy; CARTO Dark Matter"
+                  />
+                  {heatmapPoints.map((p, idx) => {
+                    const circleColor = getHeatmapColor(p.weight, p.crime_type);
+                    return (
+                      <CircleMarker
+                        key={`dash-point-${idx}`}
+                        center={[p.lat, p.lng]}
+                        radius={p.weight >= 20 ? 14 : 10}
+                        pathOptions={{
+                          color: circleColor,
+                          fillColor: circleColor,
+                          fillOpacity: 0.55,
+                          weight: 1.5,
+                        }}
+                      >
+                        <Popup>
+                          <div className="p-1 space-y-1 text-xs text-slate-900">
+                            <div className="font-bold border-b border-slate-200 pb-1">{p.station || p.district}</div>
+                            <p><strong>Crime:</strong> {p.crime_type}</p>
+                            <p><strong>FIR:</strong> {p.fir_number}</p>
+                            <p><strong>Status:</strong> {p.status}</p>
+                            <Link
+                              to={`/heatmap?city=${encodeURIComponent(p.district || "")}`}
+                              className="mt-1.5 inline-block text-center w-full bg-blue-600 text-white text-[10px] font-bold py-1 rounded hover:bg-blue-700 transition"
+                            >
+                              Inspect Details
+                            </Link>
+                          </div>
+                        </Popup>
+                      </CircleMarker>
+                    );
+                  })}
+                </MapContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 text-xs gap-2">
+                  <Flame size={24} className="text-red-500 animate-pulse" />
+                  <span>Loading Live Crime Spatial Matrix...</span>
+                </div>
+              )}
 
-                  <circle cx="220" cy="310" r="12" fill="#10B981" className="opacity-25" />
-                  <circle cx="220" cy="310" r="4" fill="#059669" />
-                </svg>
-
-                <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-200/50 shadow-soft text-[9px] font-bold text-slate-600 flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span>High Frequency ({districts[0]?.district || "Bengaluru"})</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span>Moderate ({districts[1]?.district || "Mysuru"})</span>
-                  </div>
+              {/* Overlay Legend */}
+              <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/85 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 shadow-xl text-[9px] font-bold text-slate-300 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                  <span>Critical High Risk ({districts[0]?.district || "Bengaluru"})</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span>Moderate Frequency ({districts[1]?.district || "Mysuru"})</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span>Low / Standard Dossiers</span>
                 </div>
               </div>
             </div>
