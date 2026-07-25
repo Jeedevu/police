@@ -281,6 +281,10 @@ export default function Investigation() {
               <p className="text-slate-300 text-xs mt-0.5 font-medium">
                 {t("face_intel.sub", "Real-time Biometric Matching against Karnataka Offender Database")}
               </p>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[11px] font-medium">
+                <AlertTriangle size={12} />
+                <span><strong>Note:</strong> This is for demo purposes. The fully working module will be implemented in the refining phase.</span>
+              </div>
             </div>
           </div>
 
@@ -767,43 +771,6 @@ export default function Investigation() {
               {/* Right Sidebar Column (4 Cols): Quick Stats & Actions */}
               <div className="lg:col-span-4 space-y-6">
                 
-                {/* Quick Intelligence Matrix */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 space-y-4 backdrop-blur-md">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <ShieldAlert size={16} className="text-red-400" />
-                    <span>Quick Intelligence Matrix</span>
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">FIR Cases</p>
-                      <p className="text-lg font-black text-white">{currentObj.firs?.length || 0}</p>
-                    </div>
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">Associates</p>
-                      <p className="text-lg font-black text-cyan-400">{currentObj.associates?.length || 0}</p>
-                    </div>
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">Evidence Files</p>
-                      <p className="text-lg font-black text-emerald-400">{currentObj.evidence_files?.length || 0}</p>
-                    </div>
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                      <p className="text-[9px] text-slate-400 font-bold uppercase">Vehicles</p>
-                      <p className="text-lg font-black text-amber-400">{currentObj.vehicles?.length || 0}</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800 space-y-2 text-xs">
-                    <div className="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 font-bold text-[10px] uppercase">Threat Level</span>
-                      <span className="text-red-400 font-black">{currentObj.threat_level}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 font-bold text-[10px] uppercase">Risk Rating</span>
-                      <span className="text-rose-500 font-black">{currentObj.risk_score} / 100</span>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Confidential Officer Remarks */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 space-y-3 backdrop-blur-md">
