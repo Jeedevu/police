@@ -146,6 +146,8 @@ app.include_router(notifications_router)
 app.include_router(sarvam_router)
 
 # Legacy Analytics & AI Routers
+from app.api import face_search
+app.include_router(face_search.router)
 app.include_router(ai.router)
 app.include_router(investigation.router)
 app.include_router(cases.router)

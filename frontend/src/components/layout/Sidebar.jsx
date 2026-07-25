@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Bot, 
+  ScanFace,
   FolderLock, 
   Search, 
   Share2, 
@@ -34,7 +35,7 @@ export default function Sidebar({ isCollapsed, onToggle, isMobile = false }) {
     { name: "Dashboard", icon: <LayoutDashboard size={19} />, path: "/", permission: "dashboard" },
     { name: "Crime Heat Map", icon: <Flame size={19} />, path: "/heatmap", badge: "HOT", permission: "analytics", accent: "#EF4444" },
     { name: "AI Chat", icon: <Bot size={19} />, path: "/chat", badge: "AI", permission: "ai_analytics", accent: "#4F46E5" },
-    { name: "AI Assistant", icon: <Bot size={19} />, path: "/investigation", badge: "PRO", permission: "ai_analytics", accent: "#2563EB" },
+    { name: "AI Face Intelligence", icon: <ScanFace size={19} />, path: "/investigation", badge: "NEW", permission: "ai_analytics", accent: "#2563EB" },
     { name: "Cases Dossier", icon: <FolderLock size={19} />, path: "/cases", permission: "cases" },
     { name: "Global Search", icon: <Search size={19} />, path: "/search", permission: "cases" },
     { name: "Network Intel", icon: <Share2 size={19} />, path: "/network", permission: "analytics" },
