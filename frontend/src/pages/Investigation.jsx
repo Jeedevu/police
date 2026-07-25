@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import api from "../services/api";
+import { generateExecutiveIntelligenceDossier } from "../utils/pdfDossierGenerator";
 
 const SCAN_STEPS = [
   "Detecting facial landmarks & geometry mesh...",
@@ -339,41 +340,10 @@ export default function Investigation() {
   // PDF Dossier Export Generator
   const handleExportPDF = () => {
     const target = selectedCriminal || DEFAULT_CRIMINALS[0];
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("KARNATAKA STATE POLICE — INTELLIGENCE DOSSIER", 14, 20);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Criminal ID: ${target.criminal_id} | Status: ${target.wanted_status}`, 14, 28);
-    doc.text(`Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL POLICE USE ONLY`, 14, 34);
-
-    doc.line(14, 38, 196, 38);
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("SUSPECT BIOMETRIC & PERSONAL PROFILE", 14, 46);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Full Name: ${target.name}`, 14, 54);
-    doc.text(`Alias: ${target.alias}`, 14, 60);
-    doc.text(`Age: ${target.age} | DOB: ${target.dob}`, 14, 66);
-    doc.text(`District: ${target.district} (${target.police_station})`, 14, 72);
-    doc.text(`Threat Level: ${target.threat_level} | Risk Score: ${target.risk_score}/100`, 14, 78);
-    doc.text(`Last Known Location: ${target.last_seen}`, 14, 84);
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("AI INVESTIGATION REPORT SUMMARY", 14, 96);
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    const summaryLines = doc.splitTextToSize(matchResult?.ai_report?.summary || matchResult?.summary || "", 180);
-    doc.text(summaryLines, 14, 104);
-
-    doc.save(`KSP_Dossier_${target.criminal_id}_${target.name.replace(/\s+/g, "_")}.pdf`);
+    generateExecutiveIntelligenceDossier({
+      criminal: target,
+      matchResult: matchResult
+    });
   };
 
   return (

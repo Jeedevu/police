@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import api from "../services/api";
+import { generateExecutiveIntelligenceDossier } from "../utils/pdfDossierGenerator";
 
 const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4"];
 
@@ -78,76 +79,13 @@ export default function Reports() {
   }, []);
 
   const exportFullReport = () => {
-    const doc = new jsPDF();
-    const pw = doc.internal.pageSize.getWidth();
-    let y = 15;
-
-    // Header
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, pw, 40, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("KARNATAKA STATE POLICE", 15, 16);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(148, 163, 184);
-    doc.text("COMPREHENSIVE CRIME INTELLIGENCE REPORT", 15, 24);
-    doc.setFontSize(8);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 15, 33);
-    y = 50;
-
-    const section = (title) => {
-      if (y > 250) { doc.addPage(); y = 20; }
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(37, 99, 235);
-      doc.text(title, 15, y);
-      y += 7;
-    };
-
-    const row = (label, value) => {
-      if (y > 265) { doc.addPage(); y = 20; }
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(51, 65, 85);
-      doc.text(`${label}:`, 15, y);
-      doc.setTextColor(15, 23, 42);
-      doc.text(String(value), 75, y);
-      y += 6;
-    };
-
-    if (stats) {
-      section("OPERATIONAL STATISTICS");
-      row("Total Cases", stats.total_cases);
-      row("Open Cases", stats.open_cases);
-      row("Closed Cases", stats.closed_cases);
-      row("High Risk Suspects", stats.criminals);
-      row("Vehicles Tracked", stats.vehicles);
-      row("Evidence Items", stats.evidence);
-      y += 5;
-    }
-
-    section("CRIME TYPE DISTRIBUTION");
-    trends.forEach((t) => row(t.crime_type || "Unknown", `${t.total_cases} cases`));
-    y += 5;
-
-    section("DISTRICT CRIME HOTSPOTS");
-    districts.slice(0, 10).forEach((d) => row(d.district || "Unknown", `${d.total_cases} cases`));
-    y += 5;
-
-    if (alerts?.high_risk_suspects?.length > 0) {
-      section("HIGH RISK SUSPECTS");
-      alerts.high_risk_suspects.forEach((s) => row(s.full_name, `Risk: ${s.risk_score}%`));
-      y += 5;
-    }
-
-    section("CRIME PREDICTION INTELLIGENCE");
-    predictions.slice(0, 10).forEach((p) => {
-      row(p.district, `${p.predicted_crime_type || "Theft"} — ${p.probability_score || 70}% probability`);
+    generateExecutiveIntelligenceDossier({
+      stats,
+      trends,
+      districts,
+      alerts,
+      predictions
     });
-
-    doc.save(`ksp_intelligence_report_${Date.now()}.pdf`);
   };
 
   if (loading) {
