@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { 
   FileText, 
@@ -27,6 +28,7 @@ import Layout from "../components/layout/Layout";
 import StatsCard from "../components/dashboard/StatsCard";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { formatIndianNumber } from "../utils/formatters";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -86,6 +88,7 @@ const CASE_STATUSES = [
 ];
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     total_cases: 0,
     open_cases: 0,
@@ -196,7 +199,7 @@ export default function Dashboard() {
     }
   };
 
-  // Open Edit Modal with full suspect and complainant details
+  // Open Edit Modal
   const openEditModal = async (c) => {
     setSelectedEditCase(c);
     let comp = {};
@@ -275,7 +278,7 @@ export default function Dashboard() {
   };
 
   const { officer, rank, role, badgeNumber, station, district } = useAuth();
-  const officerName = officer?.full_name || "Officer";
+  const officerName = officer?.full_name || t("police_terms.officer", "Officer");
   const avatarUrl = officer?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(officerName)}&background=2563EB&color=fff&bold=true`;
   const lastLoginStr = officer?.last_login ? new Date(officer.last_login).toLocaleString() : "Active Session";
 
@@ -289,7 +292,7 @@ export default function Dashboard() {
           </div>
           <div className="text-center">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">Running KSP Core Engines...</h4>
-            <p className="text-[10px] text-slate-400 mt-1">Aggregating records and compiling crime metrics...</p>
+            <p className="text-[10px] text-slate-400 mt-1">{t("common.loading", "Loading...")}</p>
           </div>
         </div>
       </Layout>
@@ -302,7 +305,6 @@ export default function Dashboard() {
         
         {/* Large Premium Greeting Hero */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-primary p-6 md:p-8 text-white shadow-premium">
-          {/* Decorative mesh background */}
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-400 via-blue-500 to-indigo-600"></div>
           <div className="absolute right-0 top-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
 
@@ -316,13 +318,13 @@ export default function Dashboard() {
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white border border-white/15 text-[10px] font-bold tracking-wider uppercase mb-2">
                   <Sparkles size={11} className="text-cyan-400 animate-pulse" />
-                  <span>{rank || role || "Officer"} • BADGE: {badgeNumber}</span>
+                  <span>{rank || role || t("police_terms.officer", "Officer")} • BADGE: {badgeNumber}</span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-                  {greeting}, {rank} {officerName}
+                  {t("dashboard.title", "Crime Dashboard")} — {officerName}
                 </h1>
                 <p className="text-slate-300 text-xs md:text-sm mt-1 font-medium leading-relaxed">
-                  Jurisdiction: <span className="text-cyan-300 font-bold">{station}</span> ({district}) • Last Login: <span className="text-slate-200">{lastLoginStr}</span>
+                  {t("dashboard.station", "Police Station")}: <span className="text-cyan-300 font-bold">{station}</span> ({district}) • {t("app.govt", "Government of Karnataka")}
                 </p>
               </div>
             </div>
@@ -333,7 +335,7 @@ export default function Dashboard() {
                 className="bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg transition-transform hover:scale-[1.02] flex items-center gap-2 border border-red-400/30"
               >
                 <Flame size={15} className="animate-pulse" />
-                <span>Crime Heat Map</span>
+                <span>{t("sidebar.heat_map", "Crime Heat Map")}</span>
               </Link>
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -348,20 +350,20 @@ export default function Dashboard() {
                 className="bg-white hover:bg-slate-50 text-slate-950 text-xs font-bold px-4 py-3 rounded-xl shadow-lg transition-transform hover:scale-[1.02] flex items-center gap-2 border border-slate-100"
               >
                 <Sparkles size={14} className="text-primary" />
-                <span>Ask KSP AI Assistant</span>
+                <span>{t("sidebar.ai_chat", "AI Assistant")}</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Dynamic Counter KPI Cards Grid */}
+        {/* Dynamic Counter KPI Cards Grid (Using Indian Format for Numbers) */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatsCard title="Total FIR Files" value={stats.total_cases} icon={<FileText size={18} />} color="sky" trend="+6.2%" />
-          <StatsCard title="Open Cases" value={stats.open_cases} icon={<Clock size={18} />} color="amber" trend="-2.4%" isPositive={false} />
-          <StatsCard title="Solved / Closed" value={stats.closed_cases} icon={<CheckCircle2 size={18} />} color="emerald" trend="+11.1%" />
-          <StatsCard title="High Risk Suspects" value={stats.criminals} icon={<UserX size={18} />} color="rose" trend="+1.5%" />
-          <StatsCard title="Vehicles Scan" value={stats.vehicles} icon={<Car size={18} />} color="violet" trend="+4.8%" />
-          <StatsCard title="Evidence Items" value={stats.evidence} icon={<Layers size={18} />} color="sky" trend="+8.3%" />
+          <StatsCard title={t("dashboard.total_firs", "Total FIRs")} value={formatIndianNumber(stats.total_cases)} icon={<FileText size={18} />} color="sky" trend="+6.2%" />
+          <StatsCard title={t("dashboard.pending_investigation", "Pending Investigation")} value={formatIndianNumber(stats.open_cases)} icon={<Clock size={18} />} color="amber" trend="-2.4%" isPositive={false} />
+          <StatsCard title={t("dashboard.cases_solved", "Cases Solved")} value={formatIndianNumber(stats.closed_cases)} icon={<CheckCircle2 size={18} />} color="emerald" trend="+11.1%" />
+          <StatsCard title={t("dashboard.high_risk_suspects", "High Risk Suspects")} value={formatIndianNumber(stats.criminals)} icon={<UserX size={18} />} color="rose" trend="+1.5%" />
+          <StatsCard title={t("dashboard.active_officers", "Active Officers")} value={formatIndianNumber(stats.vehicles)} icon={<Car size={18} />} color="violet" trend="+4.8%" />
+          <StatsCard title={t("dashboard.evidence_items", "Evidence Items")} value={formatIndianNumber(stats.evidence)} icon={<Layers size={18} />} color="sky" trend="+8.3%" />
         </div>
 
         {/* Charts & Map split layout */}
@@ -371,11 +373,13 @@ export default function Dashboard() {
           <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-soft lg:col-span-8 flex flex-col h-[350px]">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Monthly Incident Frequencies</h3>
-                <p className="text-[10px] text-slate-400 mt-0.5">Aggregated dataset mapped by case registration dates</p>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  {t("dashboard.crime_trends", "Monthly Crime Trends")}
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{t("dashboard.sub", "Karnataka State Police Real-Time Intelligence & Analytics")}</p>
               </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <TrendingUp size={11} /> Solved Rate up +5%
+                <TrendingUp size={11} /> {t("dashboard.solve_rate", "Solve Rate")} +5%
               </span>
             </div>
             
@@ -396,7 +400,7 @@ export default function Dashboard() {
                     labelStyle={{ fontWeight: "bold", fontSize: "11px", color: "#1E293B" }}
                     itemStyle={{ fontSize: "11px" }}
                   />
-                  <Area type="monotone" dataKey="total_cases" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" name="Incident Volume" />
+                  <Area type="monotone" dataKey="total_cases" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" name={t("police_terms.crime", "Crime")} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -405,8 +409,10 @@ export default function Dashboard() {
           {/* Crime Distribution Head bar chart */}
           <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-soft lg:col-span-4 flex flex-col h-[350px]">
             <div className="mb-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Distribution By Crime Head</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5">Top-ranking categories in active dossiers</p>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                {t("dashboard.hotspots", "High Density Hotspot Districts")}
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">{t("dashboard.view_all", "Top-ranking categories")}</p>
             </div>
 
             <div className="flex-1 min-h-0">
@@ -419,7 +425,7 @@ export default function Dashboard() {
                     labelStyle={{ fontWeight: "bold", fontSize: "11px", color: "#1E293B" }}
                     itemStyle={{ fontSize: "11px" }}
                   />
-                  <Bar dataKey="total_cases" radius={[6, 6, 0, 0]} name="Cases Count">
+                  <Bar dataKey="total_cases" radius={[6, 6, 0, 0]} name={t("dashboard.total_firs", "Total FIRs")}>
                     {trends.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -438,11 +444,11 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
                 <h3 className="text-xs font-bold uppercase tracking-widest text-red-700 flex items-center gap-1.5">
-                  <AlertTriangle size={15} /> Active High-Threat Suspect Alerts
+                  <AlertTriangle size={15} /> {t("dashboard.high_risk_suspects", "Active High-Threat Suspect Alerts")}
                 </h3>
               </div>
               <Link to="/reports" className="text-red-600 hover:text-red-700 text-xs font-bold flex items-center gap-1">
-                <span>View Full Danger Matrix</span> <ArrowRight size={13} />
+                <span>{t("dashboard.view_all", "View All")}</span> <ArrowRight size={13} />
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -457,7 +463,7 @@ export default function Dashboard() {
                     <p className="text-[10px] text-slate-400 mt-0.5 truncate">{s.mobile || "No active IMEI tracking"}</p>
                   </div>
                   <span className="text-[9px] font-black text-red-600 bg-red-50 border border-red-200/30 px-2 py-0.5 rounded-full shrink-0 ml-2">
-                    {s.risk_score}% RISK
+                    {s.risk_score}% {t("dashboard.risk_score", "RISK")}
                   </span>
                 </Link>
               ))}
@@ -472,15 +478,17 @@ export default function Dashboard() {
           <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-soft flex flex-col h-[420px]">
             <div className="flex justify-between items-center mb-3">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Jurisdiction Hotspots</h3>
-                <p className="text-[10px] text-slate-400 mt-0.5">Top regional distribution in Karnataka State</p>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  {t("dashboard.hotspots", "Jurisdiction Hotspots")}
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{t("app.police_dept", "Karnataka State Police")}</p>
               </div>
               <Link
                 to="/heatmap"
                 className="text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/40 px-2.5 py-1 rounded-xl flex items-center gap-1 transition-all shrink-0"
               >
                 <Flame size={13} className="animate-pulse" />
-                <span>Heat Map</span>
+                <span>{t("sidebar.heat_map", "Heat Map")}</span>
               </Link>
             </div>
 
@@ -513,14 +521,14 @@ export default function Dashboard() {
                         <Popup>
                           <div className="p-1 space-y-1 text-xs text-slate-900">
                             <div className="font-bold border-b border-slate-200 pb-1">{p.station || p.district}</div>
-                            <p><strong>Crime:</strong> {p.crime_type}</p>
-                            <p><strong>FIR:</strong> {p.fir_number}</p>
-                            <p><strong>Status:</strong> {p.status}</p>
+                            <p><strong>{t("police_terms.crime", "Crime")}:</strong> {p.crime_type}</p>
+                            <p><strong>{t("police_terms.fir", "FIR")}:</strong> {p.fir_number}</p>
+                            <p><strong>{t("dashboard.status", "Status")}:</strong> {p.status}</p>
                             <Link
                               to={`/heatmap?city=${encodeURIComponent(p.district || "")}`}
                               className="mt-1.5 inline-block text-center w-full bg-blue-600 text-white text-[10px] font-bold py-1 rounded hover:bg-blue-700 transition"
                             >
-                              Inspect Details
+                              {t("common.details", "Inspect Details")}
                             </Link>
                           </div>
                         </Popup>
@@ -531,34 +539,20 @@ export default function Dashboard() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-slate-400 text-xs gap-2">
                   <Flame size={24} className="text-red-500 animate-pulse" />
-                  <span>Loading Live Crime Spatial Matrix...</span>
+                  <span>{t("common.loading", "Loading Map...")}</span>
                 </div>
               )}
-
-              {/* Overlay Legend */}
-              <div className="absolute bottom-3 left-3 z-[400] bg-slate-950/85 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 shadow-xl text-[9px] font-bold text-slate-300 flex flex-col gap-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                  <span>Critical High Risk ({districts[0]?.district || "Bengaluru"})</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span>Moderate Frequency ({districts[1]?.district || "Mysuru"})</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span>Low / Standard Dossiers</span>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Active Timeline & Recent Investigations */}
+          {/* Active Timeline & Recent Cases */}
           <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-soft lg:col-span-2 flex flex-col h-[420px]">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Case Dossiers & Management</h3>
-                <p className="text-[10px] text-slate-400 mt-0.5">Create, update, or manage cases in central repository</p>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  {t("dashboard.recent_cases", "Recent FIR Case Files")}
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{t("dashboard.sub", "Central Repository")}</p>
               </div>
               
               <div className="flex items-center gap-3">
@@ -571,7 +565,7 @@ export default function Dashboard() {
                 </button>
 
                 <Link to="/cases" className="text-primary hover:text-primary/95 text-xs font-bold flex items-center gap-1">
-                  <span>View All Archive</span> <ArrowRight size={13} />
+                  <span>{t("dashboard.view_all", "View All")}</span> <ArrowRight size={13} />
                 </Link>
               </div>
             </div>
@@ -580,11 +574,11 @@ export default function Dashboard() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3 px-3">FIR Identifier</th>
-                    <th className="py-3 px-3">Category Head</th>
-                    <th className="py-3 px-3">District Unit</th>
-                    <th className="py-3 px-3">Case Status</th>
-                    <th className="py-3 px-3 text-right">Actions</th>
+                    <th className="py-3 px-3">{t("police_terms.fir", "FIR Identifier")}</th>
+                    <th className="py-3 px-3">{t("police_terms.crime", "Category Head")}</th>
+                    <th className="py-3 px-3">{t("dashboard.district", "District Unit")}</th>
+                    <th className="py-3 px-3">{t("dashboard.status", "Case Status")}</th>
+                    <th className="py-3 px-3 text-right">{t("dashboard.actions", "Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/50 text-slate-600">
@@ -633,7 +627,7 @@ export default function Dashboard() {
                   ) : (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
-                        No case records registered yet. Click <strong>+ New Case</strong> to register your first FIR.
+                        {t("common.no_data", "No case records registered yet.")}
                       </td>
                     </tr>
                   )}
@@ -753,264 +747,6 @@ export default function Dashboard() {
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 cursor-pointer"
                 >
                   Register Case
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Case Modal */}
-      {showEditModal && selectedEditCase && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => {
-                setShowEditModal(false);
-                setSelectedEditCase(null);
-              }}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
-            >
-              <X size={18} />
-            </button>
-
-            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <Pencil size={18} className="text-blue-400" />
-              Edit Case Details — {selectedEditCase.fir_number}
-            </h3>
-
-            <form onSubmit={handleUpdateCase} className="space-y-4 text-xs">
-              {/* SECTION 1: Case Meta */}
-              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-                <h4 className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">1. FIR & Incident Information</h4>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Crime Type / Head</label>
-                    <select
-                      value={editForm.crime_type}
-                      onChange={(e) => setEditForm({ ...editForm, crime_type: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      {CRIME_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Case Status</label>
-                    <select
-                      value={editForm.case_status}
-                      onChange={(e) => setEditForm({ ...editForm, case_status: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      {CASE_STATUSES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">District</label>
-                    <select
-                      value={editForm.district}
-                      onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      {DISTRICTS.map((d) => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Police Station</label>
-                    <input
-                      type="text"
-                      required
-                      value={editForm.police_station}
-                      onChange={(e) => setEditForm({ ...editForm, police_station: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Brief Facts / Description</label>
-                  <textarea
-                    rows={2}
-                    value={editForm.brief_facts}
-                    onChange={(e) => setEditForm({ ...editForm, brief_facts: e.target.value, case_description: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  ></textarea>
-                </div>
-              </div>
-
-              {/* SECTION 2: Complainant Info */}
-              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-                <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">2. Complainant Details</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Complainant Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Ramesh Kumar"
-                      value={editForm.complainant_name || ""}
-                      onChange={(e) => setEditForm({ ...editForm, complainant_name: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Mobile Number</label>
-                    <input
-                      type="text"
-                      placeholder="+91 9876543210"
-                      value={editForm.complainant_mobile || ""}
-                      onChange={(e) => setEditForm({ ...editForm, complainant_mobile: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Aadhaar Number</label>
-                    <input
-                      type="text"
-                      placeholder="12-digit Aadhaar"
-                      value={editForm.complainant_aadhaar || ""}
-                      onChange={(e) => setEditForm({ ...editForm, complainant_aadhaar: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Age</label>
-                    <input
-                      type="number"
-                      placeholder="Age"
-                      value={editForm.complainant_age || ""}
-                      onChange={(e) => setEditForm({ ...editForm, complainant_age: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Gender</label>
-                    <select
-                      value={editForm.complainant_gender || "Male"}
-                      onChange={(e) => setEditForm({ ...editForm, complainant_gender: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Residential Address</label>
-                  <input
-                    type="text"
-                    placeholder="Full residential address"
-                    value={editForm.complainant_address || ""}
-                    onChange={(e) => setEditForm({ ...editForm, complainant_address: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-              </div>
-
-              {/* SECTION 3: Accused Suspect Info */}
-              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 space-y-3">
-                <h4 className="text-[11px] font-bold text-rose-400 uppercase tracking-wider">3. Accused Suspect Details</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Suspect Full Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Suresh Gowda"
-                      value={editForm.accused_name || ""}
-                      onChange={(e) => setEditForm({ ...editForm, accused_name: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Mobile Number</label>
-                    <input
-                      type="text"
-                      placeholder="+91 9988776655"
-                      value={editForm.accused_mobile || ""}
-                      onChange={(e) => setEditForm({ ...editForm, accused_mobile: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Aadhaar Number</label>
-                    <input
-                      type="text"
-                      placeholder="12-digit Aadhaar"
-                      value={editForm.accused_aadhaar || ""}
-                      onChange={(e) => setEditForm({ ...editForm, accused_aadhaar: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Age</label>
-                    <input
-                      type="number"
-                      placeholder="Age"
-                      value={editForm.accused_age || ""}
-                      onChange={(e) => setEditForm({ ...editForm, accused_age: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1">Gender</label>
-                    <select
-                      value={editForm.accused_gender || "Male"}
-                      onChange={(e) => setEditForm({ ...editForm, accused_gender: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Known Address / Hideout</label>
-                  <input
-                    type="text"
-                    placeholder="Last known address"
-                    value={editForm.accused_address || ""}
-                    onChange={(e) => setEditForm({ ...editForm, accused_address: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setSelectedEditCase(null);
-                  }}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 cursor-pointer"
-                >
-                  Save All Changes
                 </button>
               </div>
             </form>

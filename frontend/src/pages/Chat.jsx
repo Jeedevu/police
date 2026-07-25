@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send,
@@ -29,8 +30,12 @@ import {
 import api from "../services/api";
 import sarvamService, { SARVAM_LANGUAGES } from "../services/sarvamService";
 import Layout from "../components/layout/Layout";
+import ParticleText from "../components/ui/ParticleText";
+import ASCIIWaves from "../components/ui/ASCIIWaves";
 
 export default function Chat() {
+  const { t, i18n } = useTranslation();
+
   // Session & Conversations
   const [conversations, setConversations] = useState([]);
   const [currentConvId, setCurrentConvId] = useState(null);
@@ -38,8 +43,25 @@ export default function Chat() {
   // Messages & Language
   const [messages, setMessages] = useState([]);
   const [inputPrompt, setInputPrompt] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("kn-IN");
+  
+  // Sync selected language with active i18n language
+  const mapI18nToSarvamLang = (lng) => {
+    switch (lng) {
+      case "kn": return "kn-IN";
+      case "hi": return "hi-IN";
+      case "ta": return "ta-IN";
+      case "te": return "te-IN";
+      case "ml": return "ml-IN";
+      default: return "en-IN";
+    }
+  };
+
+  const [selectedLanguage, setSelectedLanguage] = useState(() => mapI18nToSarvamLang(i18n.language));
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSelectedLanguage(mapI18nToSarvamLang(i18n.language));
+  }, [i18n.language]);
 
   // Evidence Intelligence (Right Panel)
   const [activeEvidenceList, setActiveEvidenceList] = useState([]);
@@ -58,31 +80,23 @@ export default function Chat() {
   // Refs
   const messagesEndRef = useRef(null);
   const audioRef = useRef(new Audio());
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
 
-  // Fetch Saved Conversations on mount
   useEffect(() => {
     fetchConversations();
   }, []);
 
-  // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Audio element listeners
   useEffect(() => {
     const audioEl = audioRef.current;
     const handleEnded = () => {
       setIsPlaying(false);
-      if (handsFree) {
-        setTimeout(() => startRecording(), 800);
-      }
     };
     audioEl.addEventListener("ended", handleEnded);
     return () => audioEl.removeEventListener("ended", handleEnded);
-  }, [handsFree]);
+  }, []);
 
   const fetchConversations = async () => {
     try {
@@ -112,8 +126,6 @@ export default function Chat() {
             timestamp: m.created_at,
           }))
         );
-        setSelectedLanguage(res.data.language || "kn-IN");
-        // Load latest message evidence
         const lastAssistant = res.data.messages.filter((m) => m.role === "assistant").pop();
         if (lastAssistant && lastAssistant.evidence_json) {
           setActiveEvidenceList(lastAssistant.evidence_json);
@@ -186,34 +198,6 @@ export default function Chat() {
         setCurrentConvId(chatRes.conversation_id);
         fetchConversations();
       }
-
-      // AI HeatMap Intent Detector & Router
-      const textLower = promptText.toLowerCase();
-      if (textLower.includes("hotspot") || textLower.includes("heatmap") || (textLower.includes("show") && (textLower.includes("theft") || textLower.includes("murder") || textLower.includes("crime")))) {
-        let crime = "All";
-        let city = "All";
-        if (textLower.includes("theft")) crime = "Theft";
-        if (textLower.includes("murder")) crime = "Murder";
-        if (textLower.includes("robbery")) crime = "Robbery";
-        if (textLower.includes("cyber")) crime = "Cyber Crime";
-
-        if (textLower.includes("mysuru") || textLower.includes("mysore")) city = "Mysuru";
-        if (textLower.includes("bengaluru") || textLower.includes("bangalore")) city = "Bengaluru";
-        if (textLower.includes("hubballi") || textLower.includes("hubli")) city = "Hubballi";
-        if (textLower.includes("mangaluru") || textLower.includes("mangalore")) city = "Mangaluru";
-
-        setTimeout(() => {
-          navigate(`/heatmap?crime_type=${encodeURIComponent(crime)}&city=${encodeURIComponent(city)}`);
-        }, 1200);
-      }
-
-      // Audio Playback
-      if (chatRes.tts?.audio_urls?.[0] && autoSpeak && !isMuted) {
-        const url = chatRes.tts.audio_urls[0];
-        setAudioUrl(url);
-        audioRef.current.src = url;
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
-      }
     } catch (err) {
       console.error("AI Chat Error:", err);
       setMessages((prev) => [
@@ -221,8 +205,7 @@ export default function Chat() {
         {
           id: Date.now() + 1,
           role: "assistant",
-          content: "Sorry, an error occurred while connecting to the investigation service.",
-          evidence: [],
+          content: t("common.error", "Sorry, an error occurred while querying AI system."),
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -231,376 +214,186 @@ export default function Chat() {
     }
   };
 
-  // Recording Hands-Free logic
-  const startRecording = async () => {
-    audioChunksRef.current = [];
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: "audio/webm" });
-
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      mediaRecorderRef.current.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        if (audioBlob.size > 500) {
-          const sttRes = await sarvamService.transcribeSpeech(audioBlob, selectedLanguage);
-          if (sttRes.transcript) {
-            handleSendMessage(sttRes.transcript);
-          }
-        }
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-    } catch (e) {
-      console.error("Mic access denied:", e);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  // Voice playback controls
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else if (audioUrl) {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
-    }
-  };
-
-  const handleStop = () => {
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-    setIsPlaying(false);
-  };
-
-  const handleReplay = () => {
-    if (audioUrl) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(console.error);
-    }
-  };
-
   return (
     <Layout>
-      <div className="h-[calc(100vh-6rem)] flex gap-4 overflow-hidden">
-        {/* LEFT PANEL — Saved Conversation History Sessions */}
-        <div className="w-80 bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between hidden md:flex shadow-xl">
-          <div>
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-slate-100 font-bold text-xs">
-                <MessageSquare size={16} className="text-blue-400" />
-                <span>Conversation Sessions</span>
-              </div>
-              <button
-                onClick={createNewSession}
-                className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-sm"
+      <div className="flex h-[calc(100vh-100px)] gap-6 max-w-[1600px] mx-auto pb-4 select-none">
+        
+        {/* Left Sessions Sidebar */}
+        <div className="hidden lg:flex flex-col w-64 bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-xl shrink-0">
+          <button
+            onClick={createNewSession}
+            className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 mb-4 cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>New Chat Session</span>
+          </button>
+
+          <div className="flex-1 overflow-y-auto space-y-1 pr-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">History Sessions</p>
+            {conversations.map((conv) => (
+              <div
+                key={conv.conversation_id}
+                onClick={() => loadConversationHistory(conv.conversation_id)}
+                className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition cursor-pointer group ${
+                  currentConvId === conv.conversation_id
+                    ? "bg-blue-600/20 border border-blue-500/40 text-white font-bold"
+                    : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                }`}
               >
-                <Plus size={14} /> New
-              </button>
-            </div>
-
-            {/* Conversation list */}
-            <div className="space-y-1.5 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
-              {conversations.length > 0 ? (
-                conversations.map((c) => (
-                  <div
-                    key={c.conversation_id}
-                    onClick={() => loadConversationHistory(c.conversation_id)}
-                    className={`p-3 rounded-2xl cursor-pointer transition flex items-center justify-between text-xs group ${
-                      currentConvId === c.conversation_id
-                        ? "bg-blue-600/20 border border-blue-500/40 text-blue-300 font-bold"
-                        : "bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/80"
-                    }`}
-                  >
-                    <div className="truncate flex-1 pr-2">
-                      <p className="truncate font-medium">{c.title}</p>
-                      <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Clock size={10} /> {new Date(c.updated_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => deleteSession(c.conversation_id, e)}
-                      className="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="p-4 text-center text-xs text-slate-500">
-                  No saved conversations found. Start a new query!
+                <div className="flex items-center gap-2 min-w-0">
+                  <MessageSquare size={14} className="shrink-0 text-blue-400" />
+                  <span className="truncate">{conv.title || "Crime Investigation Query"}</span>
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="p-3 bg-slate-950/80 border border-slate-800/80 rounded-2xl text-[11px] text-slate-400">
-            <p className="font-bold text-slate-200 mb-1 flex items-center gap-1">
-              <Shield size={12} className="text-emerald-400" /> PostgreSQL Persistence
-            </p>
-            Every query is automatically saved to PostgreSQL audit trail.
+                <button
+                  onClick={(e) => deleteSession(conv.conversation_id, e)}
+                  aria-label="Delete Session"
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* CENTER PANEL — Main AI Conversation Pane */}
-        <div className="flex-1 bg-slate-900 border border-slate-800 rounded-3xl flex flex-col overflow-hidden shadow-xl">
-          {/* Header Controls */}
-          <div className="p-4 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between gap-4">
+        {/* Main Conversation Pane */}
+        <div className="flex-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 flex flex-col shadow-2xl backdrop-blur-md min-w-0">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                <Sparkles size={18} className="animate-pulse" />
+              <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                <Sparkles size={20} className="animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xs font-bold text-slate-100">AI Investigation Assistant</h2>
-                <p className="text-[10px] text-slate-400">Gemini 2.5 Flash • Sarvam Bulbul V3 Voice</p>
+                <h2 className="text-base font-bold text-white">{t("chat.title", "PoliceAssist AI Intelligence Chat")}</h2>
+                <p className="text-xs text-slate-400">{t("chat.sub", "Conversational Crime Intelligence Assistant")}</p>
               </div>
             </div>
 
-            {/* Language Selector & Controls */}
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition appearance-none cursor-pointer font-medium"
-                >
-                  {SARVAM_LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.name}
-                    </option>
-                  ))}
-                </select>
-                <Globe size={14} className="absolute left-2.5 top-2 text-slate-400" />
-              </div>
-
-              {/* Auto Speak Toggle */}
-              <button
-                onClick={() => setAutoSpeak(!autoSpeak)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
-                  autoSpeak
-                    ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
-                    : "bg-slate-900 border-slate-700 text-slate-400"
-                }`}
-              >
-                <Volume2 size={14} />
-                <span>Auto Speak</span>
-              </button>
-
-              {/* Hands-Free Toggle */}
-              <button
-                onClick={() => setHandsFree(!handsFree)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
-                  handsFree
-                    ? "bg-emerald-600/20 border-emerald-500/30 text-emerald-400"
-                    : "bg-slate-900 border-slate-700 text-slate-400"
-                }`}
-              >
-                <Radio size={14} className={handsFree ? "animate-pulse" : ""} />
-                <span>Hands-Free</span>
-              </button>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                ✓ {t("chat.ai_reply_lang", "Responding in selected language")}
+              </span>
             </div>
           </div>
 
-          {/* Messages Stream */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {messages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-3">
-                <div className="w-16 h-16 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                  <Sparkles size={32} />
+          {/* Messages list */}
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+            {messages.length === 0 ? (
+              <div className="relative flex flex-col items-center justify-center h-full text-center p-6 rounded-3xl border border-purple-500/20 overflow-hidden bg-slate-950/80 shadow-2xl">
+                {/* Character Waves ASCII Background */}
+                <div className="absolute inset-0 z-0 opacity-25 pointer-events-none">
+                  <ASCIIWaves
+                    characters=" .:-+*=%@#"
+                    elementSize={16}
+                    color="#733ceb"
+                    background="#090d16"
+                    speed={20}
+                    waveTension={5}
+                    noiseScale={12}
+                    intensity={10}
+                    hasCursorInteraction={true}
+                    interactionIntensity={15}
+                    interactionRadius={160}
+                  />
                 </div>
-                <h3 className="text-sm font-bold text-slate-200">KSP Intelligent Conversational Platform</h3>
-                <p className="text-xs max-w-md text-slate-400">
-                  Ask natural language queries regarding Repeat Offenders, FIRs, Suspect Networks, Crime Statistics, or Forensic Evidence.
-                </p>
-              </div>
-            )}
 
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shadow-md ${
-                    m.role === "user" ? "bg-blue-600 text-white" : "bg-gradient-to-tr from-blue-600 to-indigo-600 text-white"
-                  }`}
-                >
-                  {m.role === "user" ? "👮" : "🤖"}
+                {/* Pixel Drift ParticleText replacing static text "KSP AI" */}
+                <div className="relative z-10 w-full h-[180px] max-w-xl mx-auto flex items-center justify-center pointer-events-auto">
+                  <ParticleText
+                    text="KSP AI"
+                    colors={["#733ceb", "#212120"]}
+                    position="middle"
+                    particleSize={9}
+                    fontSize={147}
+                    autoFit={true}
+                    mouseForce={6}
+                    transition={{
+                      ease: "linear",
+                      mass: 1,
+                      type: "tween",
+                      damping: 60,
+                      duration: 0,
+                      stiffness: 800,
+                    }}
+                  />
                 </div>
-                <div className={`max-w-[80%] space-y-2 ${m.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+
+                <p className="relative z-10 text-xs text-slate-300 max-w-md mb-6 font-medium">
+                  Ask AI about registered FIRs, high-risk suspects, crime hotspots, legal procedure, or biometric matching across Karnataka Police databases.
+                </p>
+
+                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-2 text-left max-w-lg w-full">
+                  {[
+                    "Show high-risk suspects in Bengaluru",
+                    "FIR status for Vikram Gowda case",
+                    "ಅಪರಾಧ ನಿಯಂತ್ರಣ ಮತ್ತು ತನಿಖೆ ವಿವರ",
+                    "अपराध और संदिग्धों की पूरी जानकारी"
+                  ].map((q, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSendMessage(q)}
+                      className="p-3 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 hover:border-purple-500/50 rounded-xl text-xs text-slate-200 hover:text-white transition shadow-md cursor-pointer"
+                    >
+                      💡 {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div
-                    className={`p-4 rounded-2xl text-xs leading-relaxed ${
-                      m.role === "user"
-                        ? "bg-blue-600 text-white rounded-tr-sm"
-                        : "bg-slate-950/80 text-slate-100 rounded-tl-sm border border-slate-800"
+                    className={`max-w-[80%] rounded-2xl p-4 text-xs leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white rounded-tr-none shadow-lg shadow-blue-600/20"
+                        : "bg-slate-950 border border-slate-800 text-slate-200 rounded-tl-none shadow-md"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
                   </div>
-
-                  {/* Audio Controls Bar for Assistant Message */}
-                  {m.role === "assistant" && m.audio_url && (
-                    <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800 text-xs">
-                      <button
-                        onClick={handlePlayPause}
-                        className="p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
-                      >
-                        {isPlaying ? <Pause size={13} /> : <Play size={13} />}
-                      </button>
-                      <button onClick={handleReplay} className="p-1 text-slate-400 hover:text-white transition">
-                        <RotateCcw size={13} />
-                      </button>
-                      <button onClick={handleStop} className="p-1 text-slate-400 hover:text-white transition">
-                        <Square size={13} />
-                      </button>
-                      <span className="text-[10px] text-slate-400">Sarvam Bulbul Voice Playback</span>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              ))
+            )}
 
             {loading && (
-              <div className="flex items-center gap-2 text-xs text-blue-400 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-                Processing Gemini 2.5 Intelligence & PostgreSQL Evidence query...
+              <div className="flex justify-start">
+                <div className="bg-slate-950 border border-slate-800 text-slate-400 rounded-2xl p-4 text-xs flex items-center gap-2">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
+                  <span>{t("common.loading", "AI is processing query...")}</span>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Box */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-            className="p-4 bg-slate-950 border-t border-slate-800 flex items-center gap-3"
-          >
-            <button
-              type="button"
-              onClick={isRecording ? stopRecording : startRecording}
-              className={`p-3 rounded-2xl transition ${
-                isRecording
-                  ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/50"
-                  : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
-              }`}
-            >
-              {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
-            </button>
+          {/* Input controls */}
+          <div className="pt-4 border-t border-slate-800 flex gap-2">
             <input
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder="Ask Crime AI assistant (e.g. Show repeat offenders in Bengaluru)..."
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              placeholder={t("chat.placeholder", "Ask AI about FIRs, suspects, crime hotspots, or legal procedure...")}
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
             />
+
             <button
-              type="submit"
-              disabled={!inputPrompt.trim() || loading}
-              className="p-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-2xl transition shadow-lg shadow-blue-500/30"
+              onClick={() => handleSendMessage()}
+              disabled={loading || !inputPrompt.trim()}
+              className="px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition shadow-lg shadow-blue-500/20 flex items-center gap-1.5 cursor-pointer"
             >
-              <Send size={18} />
+              <Send size={15} />
+              <span>{t("chat.send", "Send")}</span>
             </button>
-          </form>
-        </div>
-
-        {/* RIGHT PANEL — Interactive Evidence Intelligence & Citations */}
-        <div className="w-80 bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between hidden lg:flex shadow-xl">
-          <div>
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-slate-100 font-bold text-xs">
-                <FileText size={16} className="text-emerald-400" />
-                <span>Evidence Intelligence</span>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                LIVE DB
-              </span>
-            </div>
-
-            {/* Evidence Items List */}
-            <div className="space-y-3 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
-              {activeEvidenceList.length > 0 ? (
-                activeEvidenceList.map((ev, i) => (
-                  <div
-                    key={i}
-                    onClick={() => setSelectedEvidenceItem(ev)}
-                    className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl hover:border-blue-500/50 transition cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                        {ev.type || "DOC"}
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-400">{ev.confidence} match</span>
-                    </div>
-
-                    <h4 className="text-xs font-bold text-slate-200 group-hover:text-blue-400 transition">
-                      {ev.title}
-                    </h4>
-
-                    <div className="mt-2 text-[10px] text-slate-400 space-y-1 border-t border-slate-800/60 pt-2">
-                      <p><strong className="text-slate-300">FIR No:</strong> {ev.fir_no}</p>
-                      <p><strong className="text-slate-300">Case No:</strong> {ev.case_number}</p>
-                      <p><strong className="text-slate-300">Court Status:</strong> {ev.court_status}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-4 text-center text-xs text-slate-500">
-                  No active evidence citations loaded. Run a query to load linked FIRs & CCTV.
-                </div>
-              )}
-            </div>
           </div>
         </div>
+
       </div>
-
-      {/* Modal Evidence Viewer */}
-      {selectedEvidenceItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative">
-            <button
-              onClick={() => setSelectedEvidenceItem(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
-            >
-              <X size={18} />
-            </button>
-
-            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <FileText size={18} className="text-blue-400" />
-              Evidence Asset Viewer — {selectedEvidenceItem.id}
-            </h3>
-
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs space-y-2">
-              <p><strong className="text-slate-300">Title:</strong> {selectedEvidenceItem.title}</p>
-              <p><strong className="text-slate-300">FIR Number:</strong> {selectedEvidenceItem.fir_no}</p>
-              <p><strong className="text-slate-300">Case Number:</strong> {selectedEvidenceItem.case_number}</p>
-              <p><strong className="text-slate-300">Investigating Officer:</strong> {selectedEvidenceItem.officer}</p>
-              <p><strong className="text-slate-300">Court Status:</strong> {selectedEvidenceItem.court_status}</p>
-              <p><strong className="text-slate-300">Confidence Match:</strong> {selectedEvidenceItem.confidence}</p>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                onClick={() => setSelectedEvidenceItem(null)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition"
-              >
-                Close Viewer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }

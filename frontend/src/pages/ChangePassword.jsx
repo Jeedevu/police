@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Lock, ShieldCheck, AlertCircle, CheckCircle2 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import authService from "../services/authService";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 export default function ChangePassword() {
+  const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,27 +46,35 @@ export default function ChangePassword() {
 
   return (
     <Layout>
-      <div className="max-w-xl mx-auto pb-10">
-        <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-soft">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+      <div className="max-w-2xl mx-auto pb-10 space-y-6">
+        {/* Hackathon Stage Demo Language Toggle Control */}
+        <LanguageSwitcher variant="demo_toggle" />
+
+        {/* Security & Password Settings Card */}
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-white/10 rounded-3xl p-8 shadow-soft">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-white/10">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <ShieldCheck size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Security & Password</h2>
-              <p className="text-xs text-slate-400">Update your officer account credentials</p>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+                {t("auth.change_password_title", "Security & Password Settings")}
+              </h2>
+              <p className="text-xs text-slate-400">
+                Update officer account security & portal configurations
+              </p>
             </div>
           </div>
 
           {error && (
-            <div className="mb-6 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+            <div className="mb-6 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
               <AlertCircle size={16} className="shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {message && (
-            <div className="mb-6 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
+            <div className="mb-6 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2">
               <CheckCircle2 size={16} className="shrink-0" />
               <span>{message}</span>
             </div>
@@ -81,7 +92,7 @@ export default function ChangePassword() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary transition"
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 pl-10 text-xs text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary transition"
                 />
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
               </div>
@@ -98,7 +109,7 @@ export default function ChangePassword() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary transition"
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 pl-10 text-xs text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary transition"
                 />
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
               </div>
@@ -115,7 +126,7 @@ export default function ChangePassword() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pl-10 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-primary transition"
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 pl-10 text-xs text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary transition"
                 />
                 <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
               </div>

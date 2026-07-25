@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Folder, Terminal, Settings, User, FileText, X, ShieldAlert, Cpu } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Search, Folder, Settings, User, FileText, X, ShieldAlert, Cpu } from "lucide-react";
 import api from "../../services/api";
 
 export default function CommandPalette({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
   const inputRef = useRef(null);
@@ -21,11 +22,11 @@ export default function CommandPalette({ isOpen, onClose }) {
 
   // Global search items
   const staticCommands = [
-    { id: "dash", title: "Go to Dashboard", category: "Navigation", icon: <ShieldAlert size={16} />, action: () => navigate("/") },
-    { id: "ai", title: "Launch AI Investigation Assistant", category: "AI Actions", icon: <Cpu size={16} className="text-blue-500" />, action: () => navigate("/investigation") },
-    { id: "cases", title: "View Active Cases Index", category: "Navigation", icon: <Folder size={16} />, action: () => navigate("/cases") },
-    { id: "analytics", title: "Analyze Crime Stats & Trends", category: "Navigation", icon: <FileText size={16} />, action: () => navigate("/analytics") },
-    { id: "search", title: "System-wide Advanced Search", category: "Navigation", icon: <Search size={16} />, action: () => navigate("/search") },
+    { id: "dash", title: t("sidebar.dashboard", "Go to Dashboard"), category: t("common.search", "Navigation"), icon: <ShieldAlert size={16} />, action: () => navigate("/") },
+    { id: "ai", title: t("sidebar.face_intel", "Launch AI Investigation Assistant"), category: "AI Actions", icon: <Cpu size={16} className="text-blue-500" />, action: () => navigate("/investigation") },
+    { id: "cases", title: t("sidebar.cases_dossier", "View Active Cases Index"), category: t("common.search", "Navigation"), icon: <Folder size={16} />, action: () => navigate("/cases") },
+    { id: "analytics", title: t("sidebar.analytics", "Analyze Crime Stats & Trends"), category: t("common.search", "Navigation"), icon: <FileText size={16} />, action: () => navigate("/analytics") },
+    { id: "search", title: t("sidebar.global_search", "System-wide Advanced Search"), category: t("common.search", "Navigation"), icon: <Search size={16} />, action: () => navigate("/search") },
   ];
 
   // Fetch recent cases from backend when query is empty, or search case list
@@ -44,12 +45,12 @@ export default function CommandPalette({ isOpen, onClose }) {
   const filteredItems = [
     ...staticCommands.filter(item => item.title.toLowerCase().includes(query.toLowerCase())),
     ...dbCases
-      .filter(c => c.fir_number.toLowerCase().includes(query.toLowerCase()) || c.crime_type.toLowerCase().includes(query.toLowerCase()))
+      .filter(c => (c.fir_number || "").toLowerCase().includes(query.toLowerCase()) || (c.crime_type || "").toLowerCase().includes(query.toLowerCase()))
       .slice(0, 5)
       .map(c => ({
         id: `case-${c.case_id}`,
         title: `FIR ${c.fir_number}: ${c.crime_type}`,
-        category: "Cases Dossier",
+        category: t("sidebar.cases_dossier", "Cases Dossier"),
         icon: <Folder size={16} className="text-amber-500" />,
         action: () => navigate(`/cases?case_id=${c.case_id}`)
       }))
@@ -93,15 +94,15 @@ export default function CommandPalette({ isOpen, onClose }) {
       />
 
       {/* Palette Container */}
-      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white/90 backdrop-blur-xl border border-slate-200/80 shadow-premium glow-accent transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-premium glow-accent transition-all animate-in fade-in zoom-in-95 duration-200">
         {/* Search Input bar */}
-        <div className="flex items-center border-b border-slate-100 px-4 py-3">
+        <div className="flex items-center border-b border-slate-100 dark:border-white/10 px-4 py-3">
           <Search className="text-slate-400 mr-3" size={20} />
           <input
             ref={inputRef}
             type="text"
-            className="w-full bg-transparent text-slate-800 placeholder-slate-400 text-sm focus:outline-none"
-            placeholder="Type a command or search FIR dossiers... (Esc to close)"
+            className="w-full bg-transparent text-slate-800 dark:text-white placeholder-slate-400 text-sm focus:outline-none"
+            placeholder={t("nav.search_placeholder", "Search FIR, suspects, evidence...")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -110,6 +111,7 @@ export default function CommandPalette({ isOpen, onClose }) {
           />
           <button
             onClick={onClose}
+            aria-label={t("common.close", "Close")}
             className="text-slate-400 hover:text-slate-600 rounded-md p-1 hover:bg-slate-100 transition"
           >
             <X size={16} />
@@ -120,7 +122,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         <div className="max-h-[350px] overflow-y-auto p-2">
           {filteredItems.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-sm font-medium">
-              No results found for &ldquo;{query}&rdquo;
+              {t("common.no_data", "No results found")} &ldquo;{query}&rdquo;
             </div>
           ) : (
             <div>
@@ -138,7 +140,6 @@ export default function CommandPalette({ isOpen, onClose }) {
                   </div>
                   <div className="space-y-0.5">
                     {items.map((item) => {
-                      // Find real global index of this item to check selection
                       const globalIndex = filteredItems.findIndex(fi => fi.id === item.id);
                       const isSelected = globalIndex === selectedIndex;
 
@@ -151,7 +152,7 @@ export default function CommandPalette({ isOpen, onClose }) {
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs font-medium transition-all ${isSelected
                               ? "bg-primary/10 text-primary glow-accent"
-                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800"
                             }`}
                         >
                           <div className="flex items-center gap-3">
@@ -176,7 +177,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 px-4 py-2 bg-slate-50/50 flex justify-between items-center text-[10px] text-slate-400 font-mono">
+        <div className="border-t border-slate-100 dark:border-white/10 px-4 py-2 bg-slate-50/50 dark:bg-white/5 flex justify-between items-center text-[10px] text-slate-400 font-mono">
           <div className="flex items-center gap-2">
             <span>Navigation:</span>
             <span className="bg-white border border-slate-200 px-1 py-0.5 rounded shadow-sm">↑↓</span>

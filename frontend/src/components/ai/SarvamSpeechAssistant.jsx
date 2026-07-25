@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import {
   Mic,
   MicOff,
@@ -22,8 +23,14 @@ import {
 import sarvamService, { SARVAM_LANGUAGES } from "../../services/sarvamService";
 
 export default function SarvamSpeechAssistant() {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+
+  // Hide the floating widget on auth pages
+  if (["/login", "/forgot-password", "/reset-password"].includes(location.pathname)) {
+    return null;
+  }
   const [selectedLanguage, setSelectedLanguage] = useState("kn-IN");
   
   // State machine: "idle" | "listening" | "transcribing" | "thinking" | "speaking"

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { jsPDF } from "jspdf";
 import {
@@ -28,10 +29,12 @@ import {
 import Layout from "../components/layout/Layout";
 import api from "../services/api";
 import { generateExecutiveIntelligenceDossier } from "../utils/pdfDossierGenerator";
+import { formatIndianNumber } from "../utils/formatters";
 
 const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4"];
 
 export default function Reports() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [trends, setTrends] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -93,13 +96,12 @@ export default function Reports() {
       <Layout>
         <div className="flex flex-col items-center justify-center h-full gap-3">
           <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-primary animate-spin"></div>
-          <p className="text-slate-400 text-xs font-semibold">Compiling PDF sheets...</p>
+          <p className="text-slate-400 text-xs font-semibold">{t("reports.generating", "Compiling Dossier...")}</p>
         </div>
       </Layout>
     );
   }
 
-  // Calculate percentage solved
   const solvedPercentage = stats ? ((stats.closed_cases / stats.total_cases) * 100).toFixed(1) : 0;
 
   return (
@@ -107,41 +109,41 @@ export default function Reports() {
       <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-10 select-none">
         
         {/* Page Header */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-150 shadow-soft flex justify-between items-center">
+        <div className="bg-white dark:bg-[#0F172A] p-5 rounded-3xl border border-slate-150 dark:border-white/10 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-800 flex items-center gap-2">
-              <FileText size={20} className="text-primary" /> COMMAND ARCHIVE REPORTS
+            <h1 className="text-lg font-black tracking-tight text-slate-800 dark:text-white flex items-center gap-2">
+              <FileText size={20} className="text-primary" /> {t("reports.title", "Police Intelligence Reports Engine")}
             </h1>
             <p className="text-slate-400 text-xs mt-1">
-              Export and construct legal summaries for supreme officer audits and dispatch logs.
+              {t("reports.sub", "Generate Official Classified Executive Dossiers")}
             </p>
           </div>
           
           <button
             onClick={exportFullReport}
-            className="bg-primary hover:bg-primary/95 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-md shadow-primary/10"
+            className="bg-primary hover:bg-primary/95 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow-md shadow-primary/10 cursor-pointer"
           >
-            <FileDown size={14} /> <span>Compile PDF Dossier</span>
+            <FileDown size={14} /> <span>{t("reports.compile_pdf", "Compile PDF Dossier")}</span>
           </button>
         </div>
 
         {/* Operational Statistics grid */}
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-soft">
-              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Total FIR cases</span>
-              <h3 className="text-xl font-black text-slate-800 mt-1">{stats.total_cases}</h3>
+            <div className="bg-white dark:bg-[#0F172A] border border-slate-150 dark:border-white/10 rounded-2xl p-4 shadow-soft">
+              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">{t("dashboard.total_firs", "Total FIRs")}</span>
+              <h3 className="text-xl font-black text-slate-800 dark:text-white mt-1">{formatIndianNumber(stats.total_cases)}</h3>
             </div>
-            <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-soft">
-              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Active Inquiries</span>
-              <h3 className="text-xl font-black text-slate-800 mt-1">{stats.open_cases}</h3>
+            <div className="bg-white dark:bg-[#0F172A] border border-slate-150 dark:border-white/10 rounded-2xl p-4 shadow-soft">
+              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">{t("dashboard.pending_investigation", "Pending Investigation")}</span>
+              <h3 className="text-xl font-black text-slate-800 dark:text-white mt-1">{formatIndianNumber(stats.open_cases)}</h3>
             </div>
-            <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-soft">
-              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Solved Cases</span>
-              <h3 className="text-xl font-black text-slate-800 mt-1">{stats.closed_cases}</h3>
+            <div className="bg-white dark:bg-[#0F172A] border border-slate-150 dark:border-white/10 rounded-2xl p-4 shadow-soft">
+              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">{t("dashboard.cases_solved", "Cases Solved")}</span>
+              <h3 className="text-xl font-black text-slate-800 dark:text-white mt-1">{formatIndianNumber(stats.closed_cases)}</h3>
             </div>
-            <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-soft">
-              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Case Solved Rate</span>
+            <div className="bg-white dark:bg-[#0F172A] border border-slate-150 dark:border-white/10 rounded-2xl p-4 shadow-soft">
+              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">{t("dashboard.solve_rate", "Solve Rate")}</span>
               <h3 className="text-xl font-black text-emerald-600 mt-1">{solvedPercentage}%</h3>
             </div>
           </div>
@@ -151,10 +153,10 @@ export default function Reports() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Solved Cases Distribution Recharts */}
-          <div className="bg-white border border-slate-150 p-5 rounded-3xl shadow-soft h-[350px] flex flex-col justify-between">
+          <div className="bg-white dark:bg-[#0F172A] border border-slate-150 dark:border-white/10 p-5 rounded-3xl shadow-soft h-[350px] flex flex-col justify-between">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Case Solved Ratios</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Visual distribution representing active vs closed folders</p>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t("dashboard.solve_rate", "Solve Rate Ratios")}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">{t("reports.case_summary", "Case Summary")}</p>
             </div>
             
             <div className="flex-grow min-h-0 relative">
@@ -182,49 +184,49 @@ export default function Reports() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-black text-slate-800">{solvedPercentage}%</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white">{solvedPercentage}%</span>
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">Closed</span>
               </div>
             </div>
 
             <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-500 mt-2">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Solved</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Open</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> {t("dashboard.cases_solved", "Solved")}</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> {t("dashboard.pending_investigation", "Open")}</span>
             </div>
           </div>
 
           {/* Active alerts danger index */}
-          <div className="bg-white border border-slate-150 p-5 rounded-3xl shadow-soft h-[350px] flex flex-col lg:col-span-2">
+          <div className="bg-white dark:bg-[#0F172A] border border-slate-150 dark:border-white/10 p-5 rounded-3xl shadow-soft h-[350px] flex flex-col lg:col-span-2">
             <div className="mb-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">High Risk Suspect Registry</h3>
-              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">Logged dangerous repeat offenders requiring dispatch surveillance</p>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t("dashboard.high_risk_suspects", "High Risk Suspect Registry")}</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 font-medium">{t("reports.ai_findings", "AI Findings")}</p>
             </div>
             
             <div className="flex-grow overflow-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[9px] pb-2">
-                    <th className="py-2.5 px-3">Suspect Name</th>
-                    <th className="py-2.5 px-3">Contact Trace</th>
-                    <th className="py-2.5 px-3">Threat Profile</th>
-                    <th className="py-2.5 px-3 text-right">Danger Rating</th>
+                  <tr className="border-b border-slate-100 dark:border-white/10 text-slate-400 font-bold uppercase tracking-wider text-[9px] pb-2">
+                    <th className="py-2.5 px-3">{t("police_terms.suspect", "Suspect Name")}</th>
+                    <th className="py-2.5 px-3">{t("police_terms.officer", "Contact Trace")}</th>
+                    <th className="py-2.5 px-3">{t("police_terms.crime", "Threat Profile")}</th>
+                    <th className="py-2.5 px-3 text-right">{t("dashboard.risk_score", "Danger Rating")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-600">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-600 dark:text-slate-300">
                   {alerts?.high_risk_suspects?.slice(0, 5).map((s, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition">
-                      <td className="py-3 px-3 font-bold text-slate-800 flex items-center gap-2">
+                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition">
+                      <td className="py-3 px-3 font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-red-500"></span>
                         <span>{s.full_name}</span>
                       </td>
-                      <td className="py-3 px-3 font-medium text-slate-700">{s.mobile || "No active cell mapping"}</td>
+                      <td className="py-3 px-3 font-medium text-slate-700 dark:text-slate-300">{s.mobile || "No active cell mapping"}</td>
                       <td className="py-3 px-3">
-                        <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200/20 px-2 py-0.5 rounded-md">
+                        <span className="text-[9px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200/20 px-2 py-0.5 rounded-md">
                           CRITICAL Offence
                         </span>
                       </td>
                       <td className="py-3 px-3 text-right">
-                        <span className="text-[10px] font-extrabold text-red-600 bg-red-50 px-2 py-1 rounded-xl">
+                        <span className="text-[10px] font-extrabold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-xl">
                           {s.risk_score}% RISK
                         </span>
                       </td>

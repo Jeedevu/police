@@ -4,10 +4,12 @@
  */
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import CinematicLoginAnimation from "../components/auth/CinematicLoginAnimation";
 import BlinkingSquares from "../components/ui/BlinkingSquares";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 const ROLE_COLORS = {
   ADMIN: "#f59e0b",
@@ -18,6 +20,7 @@ const ROLE_COLORS = {
 };
 
 export default function Login() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,7 +55,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] flex items-center justify-center overflow-hidden relative p-4">
+    <div className="min-h-screen bg-[#030712] flex flex-col items-center justify-center overflow-hidden relative p-4">
+      {/* Top Bar with Language Selector */}
+      <div className="absolute top-4 right-6 z-20 flex items-center gap-3">
+        <LanguageSwitcher variant="dropdown" />
+      </div>
+
       {/* Cinematic Startup Animation Overlay */}
       {showCinematic && (
         <CinematicLoginAnimation
@@ -84,7 +92,7 @@ export default function Login() {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative w-full max-w-md"
+        className="relative w-full max-w-md z-10"
       >
         <div
           className="rounded-3xl border border-white/10 p-8 shadow-2xl"
@@ -114,10 +122,10 @@ export default function Login() {
               transition={{ delay: 0.3 }}
             >
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                KSP Crime Intelligence
+                {t("auth.login_title", "KSP Crime Intelligence")}
               </h1>
               <p className="text-sm text-slate-400 mt-1">
-                Karnataka State Police — PostgreSQL + JWT Portal
+                {t("auth.login_sub", "Karnataka State Police — PostgreSQL + JWT Portal")}
               </p>
             </motion.div>
           </div>
@@ -126,7 +134,7 @@ export default function Login() {
           <div className="mb-4 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium flex items-start gap-2 leading-relaxed">
             <span className="text-sm mt-0.5">⚠️</span>
             <span>
-              <strong>Network Notice:</strong> If you experience connectivity issues, please try logging in 2 or 3 times. You may occasionally encounter errors due to network instability, Allways login with Admin Account.
+              <strong>Network Notice:</strong> If you experience connectivity issues, please try logging in 2 or 3 times. Always login with Admin Account.
             </span>
           </div>
 
@@ -149,7 +157,7 @@ export default function Login() {
             {/* Email or Username */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-                Email or Officer ID
+                {t("auth.email_username", "Email or Officer ID")}
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
@@ -160,7 +168,7 @@ export default function Login() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  placeholder="officer@ksp.gov.in or username"
+                  placeholder="officer@ksp.gov.in"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
               </div>
@@ -169,7 +177,7 @@ export default function Login() {
             {/* Password */}
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">
-                Password
+                {t("auth.password", "Password")}
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500">
@@ -180,12 +188,13 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="Enter password"
+                  placeholder="••••••••"
                   className="w-full pl-10 pr-12 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label="Toggle password visibility"
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                 >
                   {showPassword ? "🙈" : "👁️"}
@@ -206,14 +215,14 @@ export default function Login() {
                   {rememberMe && <span className="text-white text-xs">✓</span>}
                 </div>
                 <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">
-                  Remember me
+                  {t("auth.remember_me", "Remember me")}
                 </span>
               </label>
               <Link
                 to="/forgot-password"
                 className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
               >
-                Forgot password?
+                {t("auth.forgot_password", "Forgot password?")}
               </Link>
             </div>
 
@@ -234,10 +243,10 @@ export default function Login() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Authenticating JWT…
+                  {t("auth.authenticating", "Authenticating…")}
                 </span>
               ) : (
-                "Sign In Securely"
+                t("auth.sign_in", "Sign In Securely")
               )}
             </motion.button>
           </form>
@@ -250,7 +259,7 @@ export default function Login() {
             className="mt-6 p-3 rounded-xl bg-white/3 border border-white/5"
           >
             <p className="text-xs text-slate-500 text-center mb-2 font-medium uppercase tracking-wider">
-              Quick Demo Accounts
+              {t("auth.quick_demo", "Quick Demo Accounts")}
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               {[
@@ -289,7 +298,7 @@ export default function Login() {
 
           {/* Footer */}
           <p className="text-center text-xs text-slate-600 mt-6">
-            Authorized personnel only • Misuse is a punishable offence
+            {t("auth.notice", "Authorized personnel only • Misuse is a punishable offence")}
           </p>
         </div>
       </motion.div>

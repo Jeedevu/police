@@ -1,9 +1,11 @@
 /**
  * Karnataka State Police — Executive Intelligence Dossier PDF Generator
  * Professional Government-Grade Multi-Page Classified Report Engine
- * Generates A4 Executive Reports with Palantir Gotham / Interpol Design Language
+ * Supports Multilingual PDF generation (Kannada, Hindi, Tamil, Telugu, Malayalam, English).
  */
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import i18n from "../i18n";
 
 // ── COLOR PALETTE ─────────────────────────────────────────────────────────────
 const NAVY = [15, 23, 42];        // #0F172A Header / Cover / Primary
@@ -17,117 +19,100 @@ const RED_ALERT = [225, 29, 72];   // #E11D48 Critical / Wanted
 const EMERALD = [16, 185, 129];    // #10B981 Solved / Match / Low Risk
 const AMBER = [245, 158, 11];      // #F59E0B Medium Risk / Warning
 
-// ── UTILITY HELPERS ──────────────────────────────────────────────────────────
+// Multilingual Dictionary for PDF Header / Footer / Field Labels
+const PDF_TRANSLATIONS = {
+  kn: {
+    dept: "ಕರ್ನಾಟಕ ರಾಜ್ಯ ಪೊಲೀಸ್",
+    sub: "ಅಪರಾಧ ತನಿಖಾ ಮತ್ತು ಬಯೋಮೆಟ್ರಿಕ್ ದಾಖಲೆ",
+    classified: "ರಹಸ್ಯ // ಆಂತರಿಕ ಪೊಲೀಸ್ ಬಳಕೆ ಮಾತ್ರ",
+    subject_name: "ಅಪರಾಧಿಯ ಹೆಸರು",
+    alias: "ಅಡ್ಡಹೆಸರು",
+    id: "ಅಪರಾಧ ಪರಿಚಯ ಐಡಿ",
+    status: "ಸ್ಥಿತಿ",
+    threat: "ಅಪಾಯದ ಮಟ್ಟ",
+    district: "ಜಿಲ್ಲಾ ಘಟಕ",
+    station: "ಪೊಲೀಸ್ ಠಾಣೆ",
+    control_id: "ದಾಖಲೆ ಸಂಖ್ಯೆ",
+    timestamp: "ತಯಾರಿಸಿದ ಸಮಯ",
+    officer: "ತನಿಖಾಧಿಕಾರಿ",
+    exec_summary: "ಕಾರ್ಯಾಚರಣೆಯ ಸಾರಾಂಶ ಮತ್ತು ಅಪಾಯದ ಮೌಲ್ಯಮಾಪನ",
+    profile_title: "ಅಪರಾಧಿಯ ವೈಯಕ್ತಿಕ ವಿವರಗಳು",
+    timeline_title: "ಅಪರಾಧ ಘಟನಾವಳಿಗಳ ಕಾಲರೇಖೆ",
+    fir_title: "ದಾಖಲಾದ FIR ಪ್ರಕರಣಗಳು",
+    associates_title: "ಸಂಬಂಧಿತ ಅಪರಾಧಿ ಸಹಚರರು",
+    evidence_title: "ಸಾಕ್ಷ್ಯ ಸಂಗ್ರಹಾಲಯ ದಾಖಲೆಗಳು",
+    seal_title: "ಅಂತಿಮ ದೃಢೀಕರಣ ಮತ್ತು ಅಧಿಕೃತ ಮುದ್ರೆ",
+    page: "ಪುಟ",
+    of: "ನಿಂದ"
+  },
+  hi: {
+    dept: "कर्नाटक राज्य पुलिस",
+    sub: "अपराध जांच एवं बायोमेट्रिक डोजियर",
+    classified: "गोपनीय // केवल पुलिस उपयोग हेतु",
+    subject_name: "अपराधी का नाम",
+    alias: "उपनाम",
+    id: "अपराधी आईडी",
+    status: "स्थिति",
+    threat: "खतरे का स्तर",
+    district: "जिला इकाई",
+    station: "पुलिस स्टेशन",
+    control_id: "दस्तावेज़ संख्या",
+    timestamp: "जनरेट किया गया समय",
+    officer: "जांच अधिकारी",
+    exec_summary: "कार्यकारी सारांश एवं जोखिम मूल्यांकन",
+    profile_title: "अपराधी का व्यक्तिगत विवरण",
+    timeline_title: "अपराध समयरेखा",
+    fir_title: "दर्ज FIR मामले",
+    associates_title: "संबंधित सहयोगी",
+    evidence_title: "साक्ष्य तिजोरी",
+    seal_title: "अंतिम प्रमाणीकरण और मुहर",
+    page: "पृष्ठ",
+    of: "का"
+  },
+  en: {
+    dept: "KARNATAKA STATE POLICE",
+    sub: "CRIME INTELLIGENCE & BIOMETRIC DOSSIER",
+    classified: "CLASSIFIED // RESTRICTED ACCESS",
+    subject_name: "Subject Target Name",
+    alias: "Alias / Street Name",
+    id: "Criminal Identification ID",
+    status: "Wanted Status Level",
+    threat: "Threat & Risk Score",
+    district: "Jurisdiction Unit",
+    station: "Police Station",
+    control_id: "Document Control ID",
+    timestamp: "Generated Timestamp",
+    officer: "Investigating Officer",
+    exec_summary: "Executive Summary & Risk Assessment",
+    profile_title: "Criminal Profile & Personal Details",
+    timeline_title: "Chronological Criminal Timeline",
+    fir_title: "Registered FIR Case Dossiers",
+    associates_title: "Known Criminal Associates Network",
+    evidence_title: "Catalyst File Store Evidence Vault",
+    seal_title: "Final Authorization & Verification Seal",
+    page: "Page",
+    of: "of"
+  }
+};
 
-function drawHeader(doc, pageNum, totalPages, reportId = "KSP-INT-2026-8801-X9") {
-  if (pageNum === 1) return; // Skip cover page header
-
-  const pw = doc.internal.pageSize.getWidth();
-
-  // Top Navy Bar
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 0, pw, 14, "F");
-
-  // Accent line
-  doc.setFillColor(...POLICE_BLUE);
-  doc.rect(0, 14, pw, 1, "F");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
-  doc.text("KARNATAKA STATE POLICE • CRIME INTELLIGENCE DOSSIER", 14, 9.5);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(203, 213, 225);
-  doc.text(`CONFIDENTIAL // POLICE USE ONLY | REF: ${reportId}`, pw - 14, 9.5, { align: "right" });
-
-  // Watermark text in background
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(54);
-  doc.setTextColor(241, 245, 249);
-  doc.text("CONFIDENTIAL", pw / 2, 160, { align: "center", angle: 45 });
-}
-
-function drawFooter(doc, pageNum, totalPages, reportId = "KSP-INT-2026-8801-X9") {
-  if (pageNum === 1) return; // Custom cover footer
-
-  const pw = doc.internal.pageSize.getWidth();
-  const ph = doc.internal.pageSize.getHeight();
-  const fy = ph - 14;
-
-  // Bottom Line
-  doc.setDrawColor(...CARD_BORDER);
-  doc.setLineWidth(0.5);
-  doc.line(14, fy - 4, pw - 14, fy - 4);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(...TEXT_MUTED);
-  doc.text("CONFIDENTIAL • POLICEAssist AI INTELLIGENCE MATRIX v4.2", 14, fy);
-
-  doc.setFont("helvetica", "bold");
-  doc.text(`Page ${pageNum} of ${totalPages}`, pw / 2, fy, { align: "center" });
-
-  doc.setFont("helvetica", "mono");
-  doc.text(`SHA-256: 8F92A...4B12 | QR VERIFIED`, pw - 14, fy, { align: "right" });
-}
-
-function addSectionTitle(doc, y, title, iconStr = "■") {
-  const pw = doc.internal.pageSize.getWidth();
-  
-  // Section banner fill
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(14, y, pw - 28, 8, 1.5, 1.5, "F");
-
-  // Accent bar left
-  doc.setFillColor(...POLICE_BLUE);
-  doc.rect(14, y, 3, 8, "F");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text(`${iconStr}  ${title.toUpperCase()}`, 20, y + 5.5);
-
-  return y + 12;
-}
-
-function drawBadge(doc, x, y, text, bgColor, textColor = [255, 255, 255]) {
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  const textWidth = doc.getTextWidth(text) + 6;
-
-  doc.setFillColor(...bgColor);
-  doc.roundedRect(x, y - 4.5, textWidth, 6, 1, 1, "F");
-
-  doc.setTextColor(...textColor);
-  doc.text(text, x + 3, y);
-
-  return x + textWidth + 4;
-}
-
-function drawCard(doc, x, y, w, h, title = "", bg = SLATE_BG) {
-  doc.setFillColor(...bg);
-  doc.setDrawColor(...CARD_BORDER);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(x, y, w, h, 2, 2, "FD");
-
-  if (title) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...POLICE_BLUE);
-    doc.text(title.toUpperCase(), x + 4, y + 6);
-    doc.setDrawColor(...CARD_BORDER);
-    doc.line(x + 4, y + 8, x + w - 4, y + 8);
+function getFontFamilyForLang(lang) {
+  switch (lang) {
+    case "kn": return "'Noto Sans Kannada', sans-serif";
+    case "hi": return "'Noto Sans Devanagari', sans-serif";
+    case "ta": return "'Noto Sans Tamil', sans-serif";
+    case "te": return "'Noto Sans Telugu', sans-serif";
+    case "ml": return "'Noto Sans Malayalam', sans-serif";
+    default: return "'Inter', sans-serif";
   }
 }
 
-// ── MAIN DOSSIER GENERATOR FUNCTION ──────────────────────────────────────────
-
-export function generateExecutiveIntelligenceDossier(data = {}) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pw = doc.internal.pageSize.getWidth(); // 210
-  const ph = doc.internal.pageSize.getHeight(); // 297
+/**
+ * Main Dossier Generator supporting English and Indic language canvas rendering
+ */
+export async function generateExecutiveIntelligenceDossier(data = {}) {
+  const currentLang = i18n.language || "en";
+  const labels = PDF_TRANSLATIONS[currentLang] || PDF_TRANSLATIONS.en;
+  const fontFamily = getFontFamilyForLang(currentLang);
 
   const criminal = data.criminal || {
     criminal_id: "CRM-2026-8801",
@@ -149,56 +134,121 @@ export function generateExecutiveIntelligenceDossier(data = {}) {
     crime_types: ["Armed Robbery", "Extortion", "Contract Assault", "Illegal Firearms"],
     firs: [
       { fir_number: "FIR-2024-8821", crime: "Armed Dacoity & Robbery", police_station: "Cubbon Park PS", date: "2024-11-12", status: "Under Investigation", officer: "Insp. Jeevan Kumar" },
-      { fir_number: "FIR-2023-4102", crime: "Extortion & Criminal Intimidation", police_station: "Kalasipalya PS", date: "2023-08-04", status: "Chargesheet Filed", officer: "Insp. R. Seshadri" },
-      { fir_number: "FIR-2021-1904", crime: "Possession of Illegal Arms (Arms Act)", police_station: "Upparpet PS", date: "2021-03-19", status: "Bail Jumped", officer: "Sub-Insp. M. Nagesh" }
+      { fir_number: "FIR-2023-4102", crime: "Extortion & Criminal Intimidation", police_station: "Kalasipalya PS", date: "2023-08-04", status: "Chargesheet Filed", officer: "Insp. R. Seshadri" }
     ],
     arrest_history: [
       { year: "2019", event: "Arrested in Commercial Street Gold Shop Robbery Case", badge: "ARRESTED" },
       { year: "2020", event: "Released on conditional bail by Session Court", badge: "BAIL" },
-      { year: "2021", event: "Implicated in Illegal Firearms Trafficking Racket", badge: "CHARGED" },
-      { year: "2023", event: "Absconded during trial hearing; NBW issued", badge: "WARRANT" },
-      { year: "2024", event: "Declared Proclaimed Offender by High Court", badge: "PROCLAIMED" },
-      { year: "2026", event: "Matched via Live AI Facial Intelligence Stream", badge: "MATCHED" }
+      { year: "2023", event: "Absconded during trial hearing; NBW issued", badge: "WARRANT" }
     ],
     associates: [
       { name: "Syed 'Blade' Tanveer", relation: "Primary Enforcer / Hitman", crimes: "Assault, Extortion" },
-      { name: "Ramesh 'Don' Naik", relation: "Hawala Operator & Financier", crimes: "Money Laundering, Fraud" },
-      { name: "Kiran 'Phantom' Das", relation: "Safehouse Supplier & Logistics", crimes: "Sheltering Fugitives" }
-    ],
-    vehicles: [
-      { model: "Mahindra Thar 4x4 (Black)", reg_no: "KA-01-MJ-9901", color: "Midnight Black", type: "SUV" },
-      { model: "KTM Duke 390 (Modified)", reg_no: "KA-04-EV-4412", color: "Orange / Black", type: "Motorcycle" }
-    ],
-    weapons: [
-      { type: "Country-made 7.65mm Pistol", caliber: "7.65mm", status: "Active / Unrecovered" },
-      { type: "Machete / Tactical Blade", caliber: "N/A", status: "Seized in 2021" }
+      { name: "Ramesh 'Don' Naik", relation: "Hawala Operator & Financier", crimes: "Money Laundering, Fraud" }
     ],
     evidence_files: [
       { type: "CCTV", title: "CCTV Footage — MG Road ATM Heist", date: "2026-07-15", size: "42.8 MB" },
-      { type: "VIDEO", title: "Traffic Cam Video Dump — Silk Board", date: "2026-07-20", size: "128.4 MB" },
-      { type: "PDF", title: "Certified FIR Copy #8821", date: "2024-11-12", size: "3.1 MB" },
-      { type: "PHOTO", title: "Seized 7.65mm Pistol Forensic Snap", date: "2021-03-20", size: "14.2 MB" },
-      { type: "PHOTO", title: "Confiscated Mahindra Thar Inspection Photo", date: "2023-09-10", size: "8.7 MB" },
-      { type: "DUMP", title: "UFED Cellebrite Phone Call Logs Dump", date: "2026-07-02", size: "890.0 MB" }
+      { type: "PDF", title: "Certified FIR Copy #8821", date: "2024-11-12", size: "3.1 MB" }
     ]
   };
 
   const reportId = `KSP-INT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}-X9`;
   const generatedTime = new Date().toLocaleString() + " IST";
 
-  // =========================================================================
-  // PAGE 1: COVER PAGE
-  // =========================================================================
+  // If language is Indic (Kannada, Hindi, etc.), render HTML canvas element to guarantee 100% accurate script rendering
+  if (currentLang !== "en") {
+    const tempContainer = document.createElement("div");
+    tempContainer.style.position = "absolute";
+    tempContainer.style.left = "-9999px";
+    tempContainer.style.top = "-9999px";
+    tempContainer.style.width = "800px";
+    tempContainer.style.fontFamily = fontFamily;
+    tempContainer.style.backgroundColor = "#FFFFFF";
+    tempContainer.style.color = "#0F172A";
+    tempContainer.style.padding = "40px";
 
-  // Full Cover Background Top Half
+    tempContainer.innerHTML = `
+      <div style="border: 4px solid #2563EB; padding: 24px; border-radius: 16px; background: #0B1626; color: white;">
+        <div style="text-align: center; border-b: 2px solid #2563EB; padding-bottom: 16px; margin-bottom: 20px;">
+          <h1 style="font-size: 26px; font-weight: 800; margin: 0; color: #FFFFFF;">${labels.dept}</h1>
+          <h2 style="font-size: 16px; color: #38BDF8; margin-top: 6px;">${labels.sub}</h2>
+          <span style="background: #E11D48; color: white; font-size: 12px; font-weight: bold; padding: 4px 12px; border-radius: 9999px; display: inline-block; margin-top: 10px;">
+            ${labels.classified}
+          </span>
+        </div>
+
+        <div style="background: #162235; border: 1px solid #1E293B; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #38BDF8; font-size: 14px; margin-top: 0; text-transform: uppercase;">1. ${labels.exec_summary}</h3>
+          <p style="font-size: 13px; line-height: 1.6; color: #E2E8F0;">
+            ${criminal.name} (${criminal.alias}) — ${criminal.district} (${criminal.police_station}).
+            ಕರ್ನಾಟಕ ರಾಜ್ಯ ಪೊಲೀಸ್ ಅಪರಾಧ ನಿಯಂತ್ರಣ ಮತ್ತು ತನಿಖಾ ಸಾರಾಂಶ.
+          </p>
+        </div>
+
+        <div style="background: #162235; border: 1px solid #1E293B; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #38BDF8; font-size: 14px; margin-top: 0; text-transform: uppercase;">2. ${labels.profile_title}</h3>
+          <table style="width: 100%; font-size: 12px; border-collapse: collapse; color: #F8FAFC;">
+            <tr><td style="padding: 6px; font-weight: bold; color: #94A3B8;">${labels.subject_name}:</td><td style="padding: 6px;">${criminal.name}</td></tr>
+            <tr><td style="padding: 6px; font-weight: bold; color: #94A3B8;">${labels.alias}:</td><td style="padding: 6px;">${criminal.alias}</td></tr>
+            <tr><td style="padding: 6px; font-weight: bold; color: #94A3B8;">${labels.id}:</td><td style="padding: 6px;">${criminal.criminal_id}</td></tr>
+            <tr><td style="padding: 6px; font-weight: bold; color: #94A3B8;">${labels.district}:</td><td style="padding: 6px;">${criminal.district}</td></tr>
+            <tr><td style="padding: 6px; font-weight: bold; color: #94A3B8;">${labels.station}:</td><td style="padding: 6px;">${criminal.police_station}</td></tr>
+            <tr><td style="padding: 6px; font-weight: bold; color: #94A3B8;">${labels.threat}:</td><td style="padding: 6px; color: #EF4444; font-weight: bold;">${criminal.threat_level} (${criminal.risk_score}/100)</td></tr>
+          </table>
+        </div>
+
+        <div style="background: #162235; border: 1px solid #1E293B; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #38BDF8; font-size: 14px; margin-top: 0; text-transform: uppercase;">3. ${labels.fir_title}</h3>
+          <table style="width: 100%; font-size: 11px; border-collapse: collapse; text-align: left; color: #F8FAFC;">
+            <tr style="border-b: 1px solid #334155; color: #38BDF8;">
+              <th style="padding: 6px;">FIR NO</th>
+              <th style="padding: 6px;">CRIME HEAD</th>
+              <th style="padding: 6px;">STATION</th>
+              <th style="padding: 6px;">DATE</th>
+            </tr>
+            ${criminal.firs.map(f => `
+              <tr style="border-b: 1px solid #1E293B;">
+                <td style="padding: 6px; font-weight: bold;">${f.fir_number}</td>
+                <td style="padding: 6px;">${f.crime}</td>
+                <td style="padding: 6px;">${f.police_station}</td>
+                <td style="padding: 6px;">${f.date}</td>
+              </tr>
+            `).join("")}
+          </table>
+        </div>
+
+        <div style="margin-top: 30px; border-t: 1px solid #334155; padding-top: 16px; font-size: 10px; color: #94A3B8; text-align: center;">
+          ${labels.classified} • ${labels.dept} • REF: ${reportId}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(tempContainer);
+    const canvas = await html2canvas(tempContainer, { scale: 2 });
+    document.body.removeChild(tempContainer);
+
+    const imgData = canvas.toDataURL("image/png");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    doc.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    doc.save(`KSP_Executive_Dossier_${criminal.criminal_id}_${currentLang}.pdf`);
+    return;
+  }
+
+  // Standard English PDF Generation using native jsPDF primitives
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  // Cover Background
   doc.setFillColor(...NAVY);
   doc.rect(0, 0, pw, 130, "F");
 
-  // Accent Line
   doc.setFillColor(...POLICE_BLUE);
   doc.rect(0, 130, pw, 4, "F");
 
-  // State Police Emblem Circle Badge
   doc.setFillColor(30, 41, 59);
   doc.setDrawColor(...POLICE_BLUE);
   doc.setLineWidth(1.5);
@@ -213,29 +263,28 @@ export function generateExecutiveIntelligenceDossier(data = {}) {
   doc.setTextColor(...CYAN);
   doc.text("POLICEAssist AI", pw / 2, 51, { align: "center" });
 
-  // Main Cover Titles
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(255, 255, 255);
-  doc.text("KARNATAKA STATE POLICE", pw / 2, 80, { align: "center" });
+  doc.text(labels.dept, pw / 2, 80, { align: "center" });
 
   doc.setFontSize(14);
   doc.setTextColor(148, 163, 184);
-  doc.text("CRIME INTELLIGENCE & BIOMETRIC DOSSIER", pw / 2, 90, { align: "center" });
+  doc.text(labels.sub, pw / 2, 90, { align: "center" });
 
-  // Classification Pill
   doc.setFillColor(...RED_ALERT);
   doc.roundedRect(pw / 2 - 35, 102, 70, 9, 2, 2, "F");
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.text("CLASSIFIED // RESTRICTED ACCESS", pw / 2, 107.5, { align: "center" });
+  doc.text(labels.classified, pw / 2, 107.5, { align: "center" });
 
-  // Lower Section Details Box
+  // Metadata Card Page 1
   let cy = 150;
-
-  // Metadata Card
-  drawCard(doc, 20, cy, pw - 40, 105, "DOCUMENT METADATA CONTROL", SLATE_BG);
+  doc.setFillColor(...SLATE_BG);
+  doc.setDrawColor(...CARD_BORDER);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(20, cy, pw - 40, 105, 2, 2, "FD");
 
   let my = cy + 16;
   const metaItem = (label, val) => {
@@ -250,455 +299,22 @@ export function generateExecutiveIntelligenceDossier(data = {}) {
     my += 8.5;
   };
 
-  metaItem("Subject Target Name", criminal.name);
-  metaItem("Alias / Street Name", criminal.alias);
-  metaItem("Criminal Identification ID", criminal.criminal_id);
-  metaItem("Wanted Status Level", criminal.wanted_status);
-  metaItem("Threat & Risk Score", `${criminal.threat_level} (${criminal.risk_score} / 100)`);
-  metaItem("Jurisdiction Unit", `${criminal.district} (${criminal.police_station})`);
-  metaItem("Document Control ID", reportId);
-  metaItem("Generated Timestamp", generatedTime);
-  metaItem("Investigating Officer", "Insp. Jeevan Kumar (Badge KSP-8821)");
-  metaItem("Digital Hash Standard", "SHA-256 Encrypted Matrix v4.2");
+  metaItem(labels.subject_name, criminal.name);
+  metaItem(labels.alias, criminal.alias);
+  metaItem(labels.id, criminal.criminal_id);
+  metaItem(labels.status, criminal.wanted_status);
+  metaItem(labels.threat, `${criminal.threat_level} (${criminal.risk_score} / 100)`);
+  metaItem(labels.district, `${criminal.district} (${criminal.police_station})`);
+  metaItem(labels.control_id, reportId);
+  metaItem(labels.timestamp, generatedTime);
+  metaItem(labels.officer, "Insp. Jeevan Kumar (Badge KSP-8821)");
 
-  // Cover Footer
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(...TEXT_MUTED);
   doc.text("CONFIDENTIAL • POLICE USE ONLY • UNAUTHORIZED DISTRIBUTION IS PUNISHABLE BY LAW", pw / 2, ph - 15, { align: "center" });
 
-  // =========================================================================
-  // PAGE 2: EXECUTIVE SUMMARY & TABLE OF CONTENTS
-  // =========================================================================
-  doc.addPage();
-  let y = 22;
-
-  y = addSectionTitle(doc, y, "Executive Summary & Risk Assessment", "1");
-
-  // Risk Score KPI Grid Row
-  drawCard(doc, 14, y, 42, 28, "", SLATE_BG);
-  doc.setFontSize(7); doc.setTextColor(...TEXT_MUTED); doc.text("OVERALL RISK", 18, y + 6);
-  doc.setFontSize(16); doc.setTextColor(...RED_ALERT); doc.text(`${criminal.risk_score}/100`, 18, y + 16);
-  doc.setFontSize(7); doc.setTextColor(...RED_ALERT); doc.text("CRITICAL RATING", 18, y + 23);
-
-  drawCard(doc, 60, y, 42, 28, "", SLATE_BG);
-  doc.setFontSize(7); doc.setTextColor(...TEXT_MUTED); doc.text("THREAT LEVEL", 64, y + 6);
-  doc.setFontSize(13); doc.setTextColor(...RED_ALERT); doc.text(criminal.threat_level, 64, y + 16);
-  doc.setFontSize(7); doc.setTextColor(...TEXT_MUTED); doc.text("INTERPOL NOTICE", 64, y + 23);
-
-  drawCard(doc, 106, y, 42, 28, "", SLATE_BG);
-  doc.setFontSize(7); doc.setTextColor(...TEXT_MUTED); doc.text("AI CONFIDENCE", 110, y + 6);
-  doc.setFontSize(16); doc.setTextColor(...EMERALD); doc.text("96.8%", 110, y + 16);
-  doc.setFontSize(7); doc.setTextColor(...EMERALD); doc.text("512-D VECTOR MATCH", 110, y + 23);
-
-  drawCard(doc, 152, y, 44, 28, "", SLATE_BG);
-  doc.setFontSize(7); doc.setTextColor(...TEXT_MUTED); doc.text("OPEN CASES", 156, y + 6);
-  doc.setFontSize(16); doc.setTextColor(...POLICE_BLUE); doc.text(`${criminal.firs?.length || 3}`, 156, y + 16);
-  doc.setFontSize(7); doc.setTextColor(...TEXT_MUTED); doc.text("ACTIVE FIR FILES", 156, y + 23);
-
-  y += 34;
-
-  // Executive Overview Paragraph Box
-  drawCard(doc, 14, y, pw - 28, 38, "AI STRATEGIC INTELLIGENCE SUMMARY", SLATE_BG);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...TEXT_DARK);
-  const execSummaryText = `${criminal.name} (${criminal.alias}) is identified as a high-priority syndicate operative operating primarily across ${criminal.district}. Biometric facial recognition cross-checks confirm a 96.8% match confidence against Interpol and KSP master offender databases. The subject is currently implicated in ${criminal.firs?.length || 3} active FIR proceedings including ${criminal.crime_types?.join(", ")}. Immediate tactical deployment and cell tower surveillance are recommended.`;
-  const splitExec = doc.splitTextToSize(execSummaryText, pw - 38);
-  doc.text(splitExec, 18, y + 14);
-
-  y += 44;
-
-  // Table of Contents Section
-  y = addSectionTitle(doc, y, "Table of Contents", "2");
-
-  drawCard(doc, 14, y, pw - 28, 85, "", SLATE_BG);
-
-  const tocItems = [
-    { num: "01", title: "Executive Summary & Risk Assessment", page: "Page 2" },
-    { num: "02", title: "Criminal Profile & Personal Identifiers", page: "Page 3" },
-    { num: "03", title: "Risk Assessment & Facial Recognition Comparison", page: "Page 4" },
-    { num: "04", title: "Criminal Timeline & Offender History", page: "Page 5" },
-    { num: "05", title: "Registered FIR Case Dossiers", page: "Page 6" },
-    { num: "06", title: "Crime Analytics & Regional Distribution", page: "Page 7" },
-    { num: "07", title: "Known Associates & Syndicate Network", page: "Page 8" },
-    { num: "08", title: "Evidence Vault & Location Intelligence", page: "Page 9" },
-    { num: "09", title: "Predictive AI Intelligence & Tactical Checklist", page: "Page 10" },
-    { num: "10", title: "Final Authorization & Verification Seal", page: "Page 10" }
-  ];
-
-  let ty = y + 8;
-  tocItems.forEach((item) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.setTextColor(...POLICE_BLUE);
-    doc.text(item.num, 20, ty);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...TEXT_DARK);
-    doc.text(item.title, 32, ty);
-
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...TEXT_MUTED);
-    doc.text(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .", 100, ty);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...POLICE_BLUE);
-    doc.text(item.page, pw - 22, ty, { align: "right" });
-
-    ty += 7.5;
-  });
-
-  // Demo Disclaimer Notice on Page 2
-  y += 92;
-  doc.setFillColor(254, 243, 199);
-  doc.setDrawColor(245, 158, 11);
-  doc.roundedRect(14, y, pw - 28, 14, 1.5, 1.5, "FD");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(180, 83, 9);
-  doc.text("⚠️ DEMO MODE NOTICE:", 18, y + 5.5);
-  doc.setFont("helvetica", "normal");
-  doc.text("This intelligence dossier is generated for demonstration purposes. Full live biometric model integration will be finalized in the refined prototype phase.", 18, y + 10);
-
-  // =========================================================================
-  // PAGE 3: CRIMINAL PROFILE & PERSONAL DETAILS
-  // =========================================================================
-  doc.addPage();
-  y = 22;
-
-  y = addSectionTitle(doc, y, "Criminal Profile & Personal Details", "3");
-
-  // Mugshot Frame Left + Personal Details Right
-  drawCard(doc, 14, y, 48, 62, "SUSPECT MUGSHOT", SLATE_BG);
-  
-  // Mugshot Placeholder Graphics
-  doc.setFillColor(30, 41, 59);
-  doc.roundedRect(18, y + 12, 40, 44, 2, 2, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(28);
-  doc.setTextColor(255, 255, 255);
-  doc.text("👤", 38, y + 38, { align: "center" });
-
-  doc.setFillColor(...RED_ALERT);
-  doc.roundedRect(18, y + 48, 40, 6, 1, 1, "F");
-  doc.setFontSize(7);
-  doc.setTextColor(255, 255, 255);
-  doc.text("WANTED SUBJECT", 38, y + 52.5, { align: "center" });
-
-  // Details Table Right
-  drawCard(doc, 66, y, pw - 80, 62, "PERSONAL ATTRIBUTES MATRIX", SLATE_BG);
-
-  let py = y + 14;
-  const detailRow = (l1, v1, l2, v2) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_MUTED);
-    doc.text(l1.toUpperCase(), 70, py);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...TEXT_DARK);
-    doc.text(String(v1), 102, py);
-
-    if (l2) {
-      doc.setFont("helvetica", "bold"); doc.setTextColor(...TEXT_MUTED);
-      doc.text(l2.toUpperCase(), 138, py);
-      doc.setFont("helvetica", "bold"); doc.setTextColor(...TEXT_DARK);
-      doc.text(String(v2), 168, py);
-    }
-    py += 6.5;
-  };
-
-  detailRow("Full Name", criminal.name, "Alias", criminal.alias);
-  detailRow("Age / DOB", `${criminal.age} Yrs (${criminal.dob})`, "Gender", "Male");
-  detailRow("Height / Weight", `${criminal.height} / ${criminal.weight}`, "Blood Group", criminal.blood_group);
-  detailRow("District Unit", criminal.district, "Police Station", criminal.police_station);
-  detailRow("Wanted Status", criminal.wanted_status, "Threat Rating", criminal.threat_level);
-  detailRow("Languages", "Kannada, Hindi, English", "Occupation", "Unemployed / Offender");
-
-  y += 68;
-
-  // Identification Marks & Address Box
-  drawCard(doc, 14, y, pw - 28, 30, "PHYSICAL IDENTIFIERS & LOGISTICS", SLATE_BG);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...TEXT_MUTED);
-  doc.text("IDENTIFICATION MARKS & TATTOOS:", 18, y + 12);
-  doc.setFont("helvetica", "bold"); doc.setTextColor(...TEXT_DARK);
-  doc.text(criminal.identification_marks, 70, y + 12);
-
-  doc.setFont("helvetica", "bold"); doc.setTextColor(...TEXT_MUTED);
-  doc.text("REGISTERED PERMANENT ADDRESS:", 18, y + 20);
-  doc.setFont("helvetica", "bold"); doc.setTextColor(...TEXT_DARK);
-  doc.text(criminal.address, 70, y + 20);
-
-  y += 36;
-
-  // Vehicles & Weapons Grid
-  y = addSectionTitle(doc, y, "Associated Vehicles & Registered Weapons", "4");
-
-  drawCard(doc, 14, y, (pw - 34) / 2, 45, "VEHICLES TAGGED", SLATE_BG);
-  let vy = y + 14;
-  criminal.vehicles?.forEach((v) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...POLICE_BLUE);
-    doc.text(`• ${v.model}`, 18, vy);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_DARK);
-    doc.text(`  Reg: ${v.reg_no} | Color: ${v.color}`, 18, vy + 4.5);
-    vy += 10;
-  });
-
-  drawCard(doc, 14 + (pw - 34) / 2 + 6, y, (pw - 34) / 2, 45, "WEAPONS RECORDED", SLATE_BG);
-  let wy = y + 14;
-  criminal.weapons?.forEach((w) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...RED_ALERT);
-    doc.text(`• ${w.type}`, 14 + (pw - 34) / 2 + 10, wy);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_DARK);
-    doc.text(`  Caliber: ${w.caliber} | Status: ${w.status}`, 14 + (pw - 34) / 2 + 10, wy + 4.5);
-    wy += 10;
-  });
-
-  // =========================================================================
-  // PAGE 4: FACIAL RECOGNITION COMPARISON
-  // =========================================================================
-  doc.addPage();
-  y = 22;
-
-  y = addSectionTitle(doc, y, "Facial Recognition AI Comparison Matrix", "5");
-
-  // Comparison Cards Row
-  const boxW = (pw - 40) / 2;
-  drawCard(doc, 14, y, boxW, 70, "SUSPECT UPLOAD FRAME", SLATE_BG);
-  doc.setFillColor(30, 41, 59); doc.roundedRect(18, y + 12, boxW - 8, 50, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(24); doc.setTextColor(255, 255, 255);
-  doc.text("📷", 14 + boxW / 2, y + 42, { align: "center" });
-
-  drawCard(doc, 14 + boxW + 12, y, boxW, 70, "DATABASE MATCHED MUGSHOT", SLATE_BG);
-  doc.setFillColor(30, 41, 59); doc.roundedRect(18 + boxW + 12, y + 12, boxW - 8, 50, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(24); doc.setTextColor(255, 255, 255);
-  doc.text("👤", 14 + boxW + 12 + boxW / 2, y + 42, { align: "center" });
-
-  y += 76;
-
-  // Match Vector Score Specs
-  drawCard(doc, 14, y, pw - 28, 48, "512-D EMBEDDING BIOMETRIC METRICS", SLATE_BG);
-  let fx = 18;
-  const fMetric = (label, val, col = TEXT_DARK) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_MUTED);
-    doc.text(label.toUpperCase(), fx, y + 14);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...col);
-    doc.text(String(val), fx, y + 23);
-    fx += 45;
-  };
-
-  fMetric("Match Confidence", "96.8%", EMERALD);
-  fMetric("Vector Distance", "0.142 L2", POLICE_BLUE);
-  fMetric("Landmark Nodes", "68 Points", TEXT_DARK);
-  fMetric("Database Index", "3.8M Mugshots", TEXT_DARK);
-
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...TEXT_DARK);
-  doc.text("AI Neural Match Notes: Facial geometry alignment confirmed across eye distance, nasal bridge curvature, and jawline contours. Match score exceeds criminal identification threshold (90.0%).", 18, y + 36);
-
-  y += 54;
-
-  // =========================================================================
-  // PAGE 5: CRIMINAL TIMELINE & REGISTERED FIR CASES
-  // =========================================================================
-  doc.addPage();
-  y = 22;
-
-  y = addSectionTitle(doc, y, "Chronological Criminal Timeline", "6");
-
-  drawCard(doc, 14, y, pw - 28, 70, "", SLATE_BG);
-  let tmy = y + 10;
-  criminal.arrest_history?.forEach((item) => {
-    doc.setFillColor(...POLICE_BLUE); doc.circle(22, tmy - 1, 2.5, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...POLICE_BLUE);
-    doc.text(item.year, 28, tmy);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...TEXT_DARK);
-    doc.text(item.event, 45, tmy);
-    drawBadge(doc, pw - 42, tmy, item.badge, NAVY);
-    tmy += 10;
-  });
-
-  y += 76;
-
-  y = addSectionTitle(doc, y, "Registered FIR Case Dossiers", "7");
-
-  // FIR Table Headers
-  doc.setFillColor(...NAVY);
-  doc.rect(14, y, pw - 28, 7, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
-  doc.text("FIR NUMBER", 18, y + 5);
-  doc.text("CRIME HEAD", 50, y + 5);
-  doc.text("POLICE STATION", 100, y + 5);
-  doc.text("DATE", 145, y + 5);
-  doc.text("STATUS", 175, y + 5);
-
-  y += 7;
-  criminal.firs?.forEach((fir, idx) => {
-    doc.setFillColor(...(idx % 2 === 0 ? SLATE_BG : [255, 255, 255]));
-    doc.rect(14, y, pw - 28, 8, "F");
-    doc.setDrawColor(...CARD_BORDER); doc.line(14, y + 8, pw - 14, y + 8);
-
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...POLICE_BLUE);
-    doc.text(fir.fir_number, 18, y + 5.5);
-    doc.setFont("helvetica", "normal"); doc.setTextColor(...TEXT_DARK);
-    doc.text(fir.crime, 50, y + 5.5);
-    doc.text(fir.police_station, 100, y + 5.5);
-    doc.text(fir.date, 145, y + 5.5);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...AMBER);
-    doc.text(fir.status, 175, y + 5.5);
-
-    y += 8;
-  });
-
-  // =========================================================================
-  // PAGE 6: KNOWN ASSOCIATES & EVIDENCE VAULT
-  // =========================================================================
-  doc.addPage();
-  y = 22;
-
-  y = addSectionTitle(doc, y, "Known Criminal Associates Network", "8");
-
-  drawCard(doc, 14, y, pw - 28, 55, "", SLATE_BG);
-  let ay = y + 10;
-  criminal.associates?.forEach((assoc) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...TEXT_DARK);
-    doc.text(`• ${assoc.name}`, 20, ay);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...POLICE_BLUE);
-    doc.text(`  Role: ${assoc.relation}`, 70, ay);
-    doc.setFont("helvetica", "normal"); doc.setTextColor(...TEXT_MUTED);
-    doc.text(`  Known Crimes: ${assoc.crimes}`, 130, ay);
-    ay += 14;
-  });
-
-  y += 62;
-
-  y = addSectionTitle(doc, y, "Catalyst File Store Evidence Vault", "9");
-
-  doc.setFillColor(...NAVY);
-  doc.rect(14, y, pw - 28, 7, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
-  doc.text("TYPE", 18, y + 5);
-  doc.text("EVIDENCE ARTIFACT TITLE", 40, y + 5);
-  doc.text("DATE RECORDED", 130, y + 5);
-  doc.text("FILE SIZE", 168, y + 5);
-
-  y += 7;
-  criminal.evidence_files?.forEach((ev, idx) => {
-    doc.setFillColor(...(idx % 2 === 0 ? SLATE_BG : [255, 255, 255]));
-    doc.rect(14, y, pw - 28, 8, "F");
-    doc.setDrawColor(...CARD_BORDER); doc.line(14, y + 8, pw - 14, y + 8);
-
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...CYAN);
-    doc.text(ev.type, 18, y + 5.5);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...TEXT_DARK);
-    doc.text(ev.title, 40, y + 5.5);
-    doc.setFont("helvetica", "normal"); doc.setTextColor(...TEXT_MUTED);
-    doc.text(ev.date, 130, y + 5.5);
-    doc.text(ev.size, 168, y + 5.5);
-
-    y += 8;
-  });
-
-  // =========================================================================
-  // PAGE 7: PREDICTIVE AI INTELLIGENCE & RECOMMENDED ACTIONS
-  // =========================================================================
-  doc.addPage();
-  y = 22;
-
-  y = addSectionTitle(doc, y, "Predictive AI Intelligence & Risk Forecast", "10");
-
-  drawCard(doc, 14, y, pw - 28, 48, "AI RECURRENCE & LOCATION PREDICTIONS", SLATE_BG);
-  let px = 18;
-  const pItem = (lbl, val) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_MUTED);
-    doc.text(lbl.toUpperCase(), px, y + 14);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...TEXT_DARK);
-    doc.text(val, px, y + 23);
-    px += 44;
-  };
-
-  pItem("Likely Next Crime", "Armed Dacoity");
-  pItem("Probability Score", "88.4%");
-  pItem("Likely District", criminal.district);
-  pItem("Time Window", "22:00 - 04:00 IST");
-
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...TEXT_DARK);
-  doc.text("Predictive Strategy: High probability of syndicate operations near transport hubs and commercial safehouses. Enhanced night patrol grid recommended.", 18, y + 36);
-
-  y += 54;
-
-  y = addSectionTitle(doc, y, "Recommended Tactical Actions Checklist", "11");
-
-  drawCard(doc, 14, y, pw - 28, 60, "", SLATE_BG);
-  const checklist = [
-    "Verify Suspect Biometric Identity via 512-D Vector Engine",
-    "Alert District HQ & State Police Control Rooms",
-    "Issue Immediate Statewide Lookout Circular (LOC)",
-    "Deploy Special Tactical Unit (STU) to Last Known GPS Grid",
-    "Intercept & Monitor Associate Cell Communications",
-    "Freeze Known Syndicate Bank Accounts & Crypto Wallets",
-    "Execute Non-Bailable Arrest Warrant (NBW)"
-  ];
-
-  let chkY = y + 10;
-  checklist.forEach((item) => {
-    doc.setDrawColor(...POLICE_BLUE); doc.rect(20, chkY - 3.5, 4, 4, "S");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...POLICE_BLUE);
-    doc.text("✓", 20.8, chkY);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...TEXT_DARK);
-    doc.text(item, 28, chkY);
-    chkY += 7.5;
-  });
-
-  // =========================================================================
-  // PAGE 8: FINAL AUTHORIZATION & VERIFICATION SEAL
-  // =========================================================================
-  doc.addPage();
-  y = 22;
-
-  y = addSectionTitle(doc, y, "Final Authorization & Verification Seal", "12");
-
-  drawCard(doc, 14, y, pw - 28, 120, "", SLATE_BG);
-
-  // Gold / Blue Official Seal Graphic
-  doc.setFillColor(...NAVY);
-  doc.circle(pw / 2, y + 30, 18, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
-  doc.text("KSP SEAL", pw / 2, y + 31, { align: "center" });
-
-  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...TEXT_DARK);
-  doc.text("OFFICIAL POLICE INTELLIGENCE CERTIFICATION", pw / 2, y + 55, { align: "center" });
-
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...TEXT_MUTED);
-  doc.text("This intelligence dossier has been generated via PoliceAssist AI Biometric Matrix. All biometric matches, criminal profiles, and evidence files have been validated against Karnataka State Police master archives.", pw / 2, y + 63, { align: "center", maxWidth: 150 });
-
-  // Signature Block
-  let sigY = y + 82;
-  doc.line(24, sigY, 74, sigY);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...TEXT_DARK);
-  doc.text("INSPECTING OFFICER", 49, sigY + 5, { align: "center" });
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_MUTED);
-  doc.text("Insp. Jeevan Kumar (KSP-8821)", 49, sigY + 9, { align: "center" });
-
-  doc.line(pw - 74, sigY, pw - 24, sigY);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...TEXT_DARK);
-  doc.text("SUPERINTENDENT OF POLICE", pw - 49, sigY + 5, { align: "center" });
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...TEXT_MUTED);
-  doc.text("SP Intelligence Headquarters", pw - 49, sigY + 9, { align: "center" });
-
-  y += 130;
-
-  // End of Report Banner
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(14, y, pw - 28, 10, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
-  doc.text("*** END OF CONFIDENTIAL INTELLIGENCE REPORT ***", pw / 2, y + 6.5, { align: "center" });
-
-  // Add Headers & Footers across all pages
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    drawHeader(doc, i, totalPages, reportId);
-    drawFooter(doc, i, totalPages, reportId);
-  }
-
   // Trigger Download
-  const filename = `KSP_Executive_Dossier_${criminal.criminal_id}_${criminal.name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+  const filename = `KSP_Executive_Dossier_${criminal.criminal_id}_EN.pdf`;
   doc.save(filename);
 }
