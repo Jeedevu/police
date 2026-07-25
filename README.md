@@ -24,7 +24,7 @@ Designed for the Karnataka State Police, the platform combines modern cloud tech
 ---
 
 ## 🎥 Demo Video
-
+https://youtu.be/6nC8nWHsVto?si=vOGe9uGpp1_1Qcyr
 ---
 
 ## ✨ Key Features
