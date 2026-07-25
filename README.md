@@ -56,8 +56,34 @@ Designed for the Karnataka State Police, the platform combines modern cloud tech
 
 ---
 
-## 👥 Team Responsibilities
+## 👥 Team Contributions
 
+#### Jeevan : ***Team Lead & Full Stack Developer***
+
+- Led the overall project development and system architecture.
+- Implemented core backend functionalities and integrated AI and cloud services.
+- Managed deployment, coordinated the team, and oversaw end-to-end project integration.
+
+#### Shubha : ***Backend Developer***
+
+- Diagnosed and resolved backend issues affecting the AI investigation assistant, improving response accuracy and reliability.
+- Implemented and refined the role-based authentication system for secure, permission-based access.
+- Contributed to backend enhancements and redesigned key frontend interfaces to improve overall user experience.
+
+#### Druthi : ***Demo & Storytelling***
+
+- Created the project demonstration video.
+- Developed the product walkthrough to effectively showcase the platform's features and workflow.
+
+#### Kishan : ***Presentation Team***
+
+- Prepared presentation materials.
+- Contributed to the final project presentation.
+
+#### Dharun : ***Presentation Team***
+
+- Assisted in preparing presentation materials.
+- Participated in the final project presentation.
 ---
 
 ## 🏗️ Architecture Overview
