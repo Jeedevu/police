@@ -66,9 +66,9 @@ Designed for the Karnataka State Police, the platform combines modern cloud tech
 
 #### Shubha : ***Backend Developer***
 
-- Diagnosed and resolved backend issues affecting the AI investigation assistant, improving response accuracy and reliability.
+- Diagnosed and resolved backend issues affecting the AI investigation assistant.
 - Implemented and refined the role-based authentication system for secure, permission-based access.
-- Contributed to backend enhancements and redesigned key frontend interfaces to improve overall user experience.
+- Contributed to backend enhancements and redesigned key frontend interfaces.
 
 #### Druthi : ***Demo & Storytelling***
 
