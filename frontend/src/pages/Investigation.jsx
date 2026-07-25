@@ -52,6 +52,149 @@ const SCAN_STEPS = [
   "Building intelligence profile & AI dossier..."
 ];
 
+const DEFAULT_CRIMINALS = [
+  {
+    criminal_id: "CRM-2026-8801",
+    name: "Vikram 'Bhai' Gowda",
+    alias: "Vicky / Black Cobra",
+    age: 38,
+    dob: "1988-04-14",
+    height: "5'11\" (180 cm)",
+    weight: "82 kg",
+    blood_group: "B+",
+    identification_marks: "Cobra tattoo on right forearm, scar below left eye",
+    district: "Bengaluru City",
+    police_station: "Cubbon Park PS",
+    wanted_status: "WANTED - INTERPOL RED CORNER",
+    threat_level: "CRITICAL",
+    risk_score: 96,
+    photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+    last_seen: "Majestic Bus Terminus, Bengaluru • 2026-07-22 21:45 IST",
+    address: "No. 42, 1st Cross, Kalasipalya, Bengaluru City, Karnataka",
+    crime_types: ["Armed Robbery", "Extortion", "Contract Assault", "Illegal Firearms"],
+    firs: [
+      { fir_number: "FIR-2024-8821", crime: "Armed Dacoity & Robbery", police_station: "Cubbon Park PS", date: "2024-11-12", status: "Under Investigation", officer: "Insp. Jeevan Kumar" },
+      { fir_number: "FIR-2023-4102", crime: "Extortion & Criminal Intimidation", police_station: "Kalasipalya PS", date: "2023-08-04", status: "Chargesheet Filed", officer: "Insp. R. Seshadri" },
+      { fir_number: "FIR-2021-1904", crime: "Possession of Illegal Arms (Arms Act Sec 25)", police_station: "Upparpet PS", date: "2021-03-19", status: "Bail Jumped", officer: "Sub-Insp. M. Nagesh" }
+    ],
+    arrest_history: [
+      { year: "2019", event: "Arrested in Commercial Street Gold Shop Robbery Case", badge: "ARRESTED" },
+      { year: "2020", event: "Released on conditional bail by Session Court", badge: "BAIL" },
+      { year: "2021", event: "Implicated in Illegal Firearms Trafficking Racket", badge: "CHARGED" },
+      { year: "2023", event: "Absconded during trial hearing; NBW issued", badge: "WARRANT" },
+      { year: "2024", event: "Declared Proclaimed Offender by High Court", badge: "PROCLAIMED" },
+      { year: "2026", event: "Matched via Live AI Facial Intelligence Stream", badge: "MATCHED" }
+    ],
+    associates: [
+      { name: "Syed 'Blade' Tanveer", relation: "Primary Enforcer / Hitman", crimes: "Assault, Extortion", photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80" },
+      { name: "Ramesh 'Don' Naik", relation: "Hawala Operator & Financier", crimes: "Money Laundering, Fraud", photo_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80" },
+      { name: "Kiran 'Phantom' Das", relation: "Safehouse Supplier & Logistics", crimes: "Sheltering Fugitives", photo_url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop&q=80" }
+    ],
+    vehicles: [
+      { model: "Mahindra Thar 4x4 (Black)", reg_no: "KA-01-MJ-9901", color: "Midnight Black", type: "SUV" },
+      { model: "KTM Duke 390 (Modified)", reg_no: "KA-04-EV-4412", color: "Orange / Black", type: "Motorcycle" }
+    ],
+    weapons: [
+      { type: "Country-made 7.65mm Pistol", caliber: "7.65mm", status: "Active / Unrecovered" },
+      { type: "Machete / Tactical Blade", caliber: "N/A", status: "Seized in 2021" }
+    ],
+    evidence_files: [
+      { type: "cctv", title: "CCTV Footage — MG Road ATM Heist", url: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&auto=format&fit=crop&q=80", date: "2026-07-15", size: "42.8 MB (Catalyst File Store)" },
+      { type: "video", title: "Traffic Cam Video Dump — Silk Board Junction", url: "https://images.unsplash.com/photo-1508873696983-2df515122519?w=600&auto=format&fit=crop&q=80", date: "2026-07-20", size: "128.4 MB (Catalyst File Store)" },
+      { type: "fir_pdf", title: "Certified FIR Dossier Copy #8821", url: "https://images.unsplash.com/photo-1568667256549-094345857637?w=600&auto=format&fit=crop&q=80", date: "2024-11-12", size: "3.1 MB (PDF File Store)" },
+      { type: "weapon", title: "Seized 7.65mm Pistol Forensic Snap", url: "https://images.unsplash.com/photo-1595590424283-b8f17842773f?w=600&auto=format&fit=crop&q=80", date: "2021-03-20", size: "14.2 MB (HD Photo Store)" },
+      { type: "vehicle", title: "Confiscated Mahindra Thar Inspection Photo", url: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80", date: "2023-09-10", size: "8.7 MB (High-Res Snap)" },
+      { type: "phone_extraction", title: "UFED Cellebrite Phone Call Logs Dump", url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&auto=format&fit=crop&q=80", date: "2026-07-02", size: "890.0 MB (Forensic Dump)" }
+    ]
+  },
+  {
+    criminal_id: "CRM-2026-8802",
+    name: "Syed 'Blade' Tanveer",
+    alias: "Blade Tanveer",
+    age: 34,
+    dob: "1992-09-21",
+    height: "5'9\" (175 cm)",
+    weight: "74 kg",
+    blood_group: "O+",
+    identification_marks: "Deep blade scar across right neck, cross tattoo on chest",
+    district: "Mysuru City",
+    police_station: "Udayagiri PS",
+    wanted_status: "PROCLAIMED OFFENDER",
+    threat_level: "HIGH",
+    risk_score: 92,
+    photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80",
+    last_seen: "Devaraja Market, Mysuru • 2026-07-21 18:30 IST",
+    address: "House #104, Rajiv Nagar, Mysuru, Karnataka",
+    crime_types: ["Assault", "Extortion", "Homicide Attempt", "Weapon Offenses"],
+    firs: [
+      { fir_number: "FIR-2025-1029", crime: "Attempted Murder (IPC 307)", police_station: "Udayagiri PS", date: "2025-02-14", status: "Investigation", officer: "Insp. M. Farooq" },
+      { fir_number: "FIR-2023-7741", crime: "Extortion from Local Merchants", police_station: "Nazarbad PS", date: "2023-11-20", status: "Chargesheet Filed", officer: "Sub-Insp. S. Patil" },
+      { fir_number: "FIR-2020-0912", crime: "Grievous Hurt with Deadly Weapon", police_station: "Mandi PS", date: "2020-06-01", status: "Under Trial", officer: "Insp. K. Gowda" }
+    ],
+    arrest_history: [
+      { year: "2020", event: "Arrested following street violence in Mandi Mohalla", badge: "ARRESTED" },
+      { year: "2022", event: "Granted conditional bail with weekly police check-in", badge: "BAIL" },
+      { year: "2024", event: "Involved in gang clash near Mysuru Ring Road", badge: "CHARGED" },
+      { year: "2025", event: "Fled Mysuru jurisdiction; declared absconding", badge: "WARRANT" }
+    ],
+    associates: [
+      { name: "Vikram 'Bhai' Gowda", relation: "Gang Syndicate Leader", crimes: "Armed Robbery", photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80" },
+      { name: "Imran 'Chotta' Khan", relation: "Street Weapons Dealer", crimes: "Arms Trafficking", photo_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80" }
+    ],
+    vehicles: [
+      { model: "Yamaha RX100 (Black)", reg_no: "KA-09-EB-1209", color: "Jet Black", type: "Motorcycle" }
+    ],
+    weapons: [
+      { type: "Double-edged Tactical Dagger", caliber: "N/A", status: "Active / Concealed" }
+    ],
+    evidence_files: [
+      { type: "cctv", title: "Shop Cam Frame — Udayagiri Extortion Incident", url: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&auto=format&fit=crop&q=80", date: "2025-02-14", size: "28.4 MB (Catalyst File Store)" },
+      { type: "fir_pdf", title: "FIR Copy #1029 — Attempted Murder", url: "https://images.unsplash.com/photo-1568667256549-094345857637?w=600&auto=format&fit=crop&q=80", date: "2025-02-14", size: "2.8 MB (PDF File Store)" }
+    ]
+  },
+  {
+    criminal_id: "CRM-2026-8803",
+    name: "Ramesh 'Don' Naik",
+    alias: "Bangalore Don",
+    age: 46,
+    dob: "1980-01-10",
+    height: "5'10\" (178 cm)",
+    weight: "89 kg",
+    blood_group: "A+",
+    identification_marks: "Gold tooth top-right, surgical scar on left shoulder",
+    district: "Bengaluru City",
+    police_station: "Commercial Street PS",
+    wanted_status: "ACTIVE SURVEILLANCE",
+    threat_level: "HIGH",
+    risk_score: 94,
+    photo_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&auto=format&fit=crop&q=80",
+    last_seen: "UB City Commercial Complex, Bengaluru • 2026-07-23 14:15 IST",
+    address: "Villa #12, Palm Meadows, Whitefield, Bengaluru, Karnataka",
+    crime_types: ["Money Laundering", "Financial Fraud", "Hawala Racket", "Extortion Syndicate"],
+    firs: [
+      { fir_number: "FIR-2025-9901", crime: "Hawala Transaction & Tax Evasion (₹140 Crore)", police_station: "Commercial Street PS", date: "2025-05-19", status: "Under Investigation", officer: "ACP P. Srinivas" },
+      { fir_number: "FIR-2022-3310", crime: "Cheating & Real Estate Land Grab", police_station: "Frazer Town PS", date: "2022-09-08", status: "Chargesheet Filed", officer: "Insp. B. Naidu" }
+    ],
+    arrest_history: [
+      { year: "2021", event: "Questioned by Enforcement Directorate in Hawala Case", badge: "INVESTIGATED" },
+      { year: "2023", event: "Obtained anticipatory bail from Sessions Court", badge: "BAIL" },
+      { year: "2025", event: "Lookout circular issued at HAL & Bengaluru Airports", badge: "LOOKOUT" }
+    ],
+    associates: [
+      { name: "Mohammed 'Hawala' Zakir", relation: "Crypto & Foreign Exchange Operative", crimes: "Cyber Money Laundering", photo_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80" }
+    ],
+    vehicles: [
+      { model: "Mercedes-Benz S-Class (Black)", reg_no: "KA-03-ND-0001", color: "Obsidian Black", type: "Luxury Sedan" }
+    ],
+    weapons: [
+      { type: "Licensed Glock 17 9mm (License Cancelled)", caliber: "9mm", status: "Impounded" }
+    ],
+    evidence_files: [
+      { type: "phone_extraction", title: "Encrypted WhatsApp & Telegram Chat Logs Dump", url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&auto=format&fit=crop&q=80", date: "2025-05-20", size: "1.2 GB (Catalyst File Store)" }
+    ]
+  }
+];
+
 export default function Investigation() {
   // Workflow States
   const [searchState, setSearchState] = useState("idle"); // 'idle' | 'scanning' | 'result'
@@ -59,8 +202,8 @@ export default function Investigation() {
   const [progressPercent, setProgressPercent] = useState(0);
 
   // Data States
-  const [seededCriminals, setSeededCriminals] = useState([]);
-  const [selectedCriminal, setSelectedCriminal] = useState(null);
+  const [seededCriminals, setSeededCriminals] = useState(DEFAULT_CRIMINALS);
+  const [selectedCriminal, setSelectedCriminal] = useState(DEFAULT_CRIMINALS[0]);
   const [matchResult, setMatchResult] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -79,12 +222,12 @@ export default function Investigation() {
       try {
         const res = await api.get("/api/ai/face-criminals")
           .catch(() => api.get("/ai/face-criminals"));
-        if (res.data && res.data.criminals) {
+        if (res.data && res.data.criminals && res.data.criminals.length > 0) {
           setSeededCriminals(res.data.criminals);
           setSelectedCriminal(res.data.criminals[0]);
         }
       } catch (err) {
-        console.error("Failed to load face criminals dataset:", err);
+        console.error("Failed to load face criminals dataset (using default):", err);
       }
     }
     loadCriminals();
@@ -114,64 +257,64 @@ export default function Investigation() {
     setProgressPercent(0);
     setLoadingBackend(true);
 
-    // Prepare API call in background
-    let backendPromise = null;
-    try {
-      const formData = new FormData();
-      if (uploadedImage) {
-        formData.append("image", uploadedImage);
-      } else if (selectedCriminal) {
-        formData.append("criminal_id", selectedCriminal.criminal_id);
-      }
-      backendPromise = api.post("/api/ai/face-search", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      }).catch(() => api.post("/ai/face-search", formData));
-    } catch {
-      // ignore
-    }
+    // Target criminal reference
+    const targetCriminal = selectedCriminal || seededCriminals[0] || DEFAULT_CRIMINALS[0];
 
     // Run Scanning Animation Steps (6 steps across 3.5s)
+    let currentP = 0;
     for (let i = 0; i < SCAN_STEPS.length; i++) {
       setScanningStep(i);
       const targetPercent = Math.round(((i + 1) / SCAN_STEPS.length) * 100);
 
-      // Smooth percentage count up
-      for (let p = progressPercent; p <= targetPercent; p++) {
-        setProgressPercent(p);
+      while (currentP < targetPercent) {
+        currentP += 2;
+        if (currentP > targetPercent) currentP = targetPercent;
+        setProgressPercent(currentP);
         await new Promise((r) => setTimeout(r, 12));
       }
-      await new Promise((r) => setTimeout(r, 450));
+      await new Promise((r) => setTimeout(r, 380));
     }
 
-    // Resolve Backend Data
+    // Resolve Backend or Fallback Data
     try {
-      const res = await backendPromise;
+      const formData = new FormData();
+      if (uploadedImage) {
+        formData.append("image", uploadedImage);
+      } else if (targetCriminal) {
+        formData.append("criminal_id", targetCriminal.criminal_id);
+      }
+
+      const res = await api.post("/api/ai/face-search", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      }).catch(() => api.post("/ai/face-search", formData));
+
       if (res && res.data && res.data.criminal) {
         setMatchResult(res.data);
         setSelectedCriminal(res.data.criminal);
         setOfficerNotes(res.data.ai_report?.officer_notes || "");
       } else {
-        // Fallback result
-        const fallbackCriminal = selectedCriminal || seededCriminals[0];
-        setMatchResult({
-          match: true,
-          confidence: 96.8,
-          risk: fallbackCriminal.threat_level || "CRITICAL",
-          criminal: fallbackCriminal,
-          summary: `High confidence match confirmed. ${fallbackCriminal.name} identified with ${fallbackCriminal.wanted_status}.`,
-          ai_report: {
-            summary: `${fallbackCriminal.name} is a high-priority syndicate operative operating across ${fallbackCriminal.district}. Multiple active warrants exist across Karnataka State.`,
-            behavior_pattern: "Operates primarily during late evening hours utilizing stolen high-speed vehicles. Known to rotate safehouses every 48 hours to evade cell tower triangulation.",
-            crime_trends: `Specializes in organized ${fallbackCriminal.crime_types?.join(", ")}. Uses encrypted messaging platforms and local hawala channels for funding.`,
-            next_location: `Highest probability hideouts: Border districts surrounding ${fallbackCriminal.district}, highway motels near major transport corridors.`,
-            recommended_actions: "1. Issue immediate statewide Lookout Circular (LOC).\n2. Deploy Special Tactical Unit (STU) to last reported GPS coordinates.\n3. Intercept associate communications.",
-            officer_notes: "CONFIDENTIAL — Suspect is considered armed & dangerous. Exercise extreme caution during tactical interception."
-          }
-        });
-        setOfficerNotes("CONFIDENTIAL — Suspect is considered armed & dangerous. Exercise extreme caution during tactical interception.");
+        throw new Error("No API payload returned");
       }
-    } catch (err) {
-      console.error("Search resolution error:", err);
+    } catch {
+      // Guaranteed Fallback Result
+      const fallbackCriminal = targetCriminal;
+      setMatchResult({
+        match: true,
+        confidence: 96.8,
+        risk: fallbackCriminal.threat_level || "CRITICAL",
+        criminal: fallbackCriminal,
+        summary: `High confidence match confirmed. ${fallbackCriminal.name} identified with ${fallbackCriminal.wanted_status}.`,
+        ai_report: {
+          summary: `${fallbackCriminal.name} is a high-priority syndicate operative operating across ${fallbackCriminal.district}. Multiple active warrants exist across Karnataka State.`,
+          behavior_pattern: "Operates primarily during late evening hours utilizing stolen high-speed vehicles. Known to rotate safehouses every 48 hours to evade cell tower triangulation.",
+          crime_trends: `Specializes in organized ${fallbackCriminal.crime_types?.join(", ")}. Uses encrypted messaging platforms and local hawala channels for funding.`,
+          next_location: `Highest probability hideouts: Border districts surrounding ${fallbackCriminal.district}, highway motels near major transport corridors.`,
+          recommended_actions: "1. Issue immediate statewide Lookout Circular (LOC).\n2. Deploy Special Tactical Unit (STU) to last reported GPS coordinates.\n3. Intercept associate communications.",
+          officer_notes: "CONFIDENTIAL — Suspect is considered armed & dangerous. Exercise extreme caution during tactical interception."
+        }
+      });
+      setSelectedCriminal(fallbackCriminal);
+      setOfficerNotes("CONFIDENTIAL — Suspect is considered armed & dangerous. Exercise extreme caution during tactical interception.");
     } finally {
       setLoadingBackend(false);
       setSearchState("result");
@@ -195,7 +338,7 @@ export default function Investigation() {
 
   // PDF Dossier Export Generator
   const handleExportPDF = () => {
-    if (!selectedCriminal) return;
+    const target = selectedCriminal || DEFAULT_CRIMINALS[0];
     const doc = new jsPDF();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
@@ -203,7 +346,7 @@ export default function Investigation() {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Criminal ID: ${selectedCriminal.criminal_id} | Status: ${selectedCriminal.wanted_status}`, 14, 28);
+    doc.text(`Criminal ID: ${target.criminal_id} | Status: ${target.wanted_status}`, 14, 28);
     doc.text(`Generated: ${new Date().toLocaleString()} | Classification: CONFIDENTIAL POLICE USE ONLY`, 14, 34);
 
     doc.line(14, 38, 196, 38);
@@ -214,12 +357,12 @@ export default function Investigation() {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`Full Name: ${selectedCriminal.name}`, 14, 54);
-    doc.text(`Alias: ${selectedCriminal.alias}`, 14, 60);
-    doc.text(`Age: ${selectedCriminal.age} | DOB: ${selectedCriminal.dob}`, 14, 66);
-    doc.text(`District: ${selectedCriminal.district} (${selectedCriminal.police_station})`, 14, 72);
-    doc.text(`Threat Level: ${selectedCriminal.threat_level} | Risk Score: ${selectedCriminal.risk_score}/100`, 14, 78);
-    doc.text(`Last Known Location: ${selectedCriminal.last_seen}`, 14, 84);
+    doc.text(`Full Name: ${target.name}`, 14, 54);
+    doc.text(`Alias: ${target.alias}`, 14, 60);
+    doc.text(`Age: ${target.age} | DOB: ${target.dob}`, 14, 66);
+    doc.text(`District: ${target.district} (${target.police_station})`, 14, 72);
+    doc.text(`Threat Level: ${target.threat_level} | Risk Score: ${target.risk_score}/100`, 14, 78);
+    doc.text(`Last Known Location: ${target.last_seen}`, 14, 84);
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -230,7 +373,7 @@ export default function Investigation() {
     const summaryLines = doc.splitTextToSize(matchResult?.ai_report?.summary || matchResult?.summary || "", 180);
     doc.text(summaryLines, 14, 104);
 
-    doc.save(`KSP_Dossier_${selectedCriminal.criminal_id}_${selectedCriminal.name.replace(/\s+/g, "_")}.pdf`);
+    doc.save(`KSP_Dossier_${target.criminal_id}_${target.name.replace(/\s+/g, "_")}.pdf`);
   };
 
   return (
@@ -272,13 +415,20 @@ export default function Investigation() {
 
             <button
               onClick={handleExportPDF}
-              disabled={!selectedCriminal}
-              className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-500/25 cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-blue-500/25 cursor-pointer"
             >
               <Download size={14} />
               <span>Export PDF Dossier</span>
             </button>
           </div>
+        </div>
+
+        {/* Mandatory Hackathon Demo Notice Banner */}
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-5 py-3 rounded-2xl text-xs font-medium flex items-center gap-3 shadow-md backdrop-blur-md">
+          <AlertTriangle size={18} className="text-amber-400 shrink-0 animate-pulse" />
+          <span>
+            <strong>Demo Mode Notice:</strong> This module is for demonstration purposes only. The working biometric facial recognition model will be fully implemented in the refined prototype phase.
+          </span>
         </div>
 
         {/* Top Intelligence Dashboard Widget Row */}
@@ -408,7 +558,7 @@ export default function Investigation() {
                   Select Seeded Criminal Record
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Or click any of the 15 pre-configured state offenders to simulate instant biometric match and AI intelligence dossier generation.
+                  Or click any of the pre-configured state offenders to simulate instant biometric match and AI intelligence dossier generation.
                 </p>
               </div>
 
@@ -447,14 +597,14 @@ export default function Investigation() {
               </div>
 
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Total Seeded Dossiers: <strong className="text-white">15 Records</strong></span>
+                <span>Total Seeded Dossiers: <strong className="text-white">{seededCriminals.length} Records</strong></span>
                 <span className="text-emerald-400 font-bold">100% Catalyst Data Store Ready</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* WORKFLOW VIEW 2: FULL-SCREEN / EMBEDDED PREMUM AI SCANNING ANIMATION */}
+        {/* WORKFLOW VIEW 2: FULL-SCREEN / EMBEDDED PREMIUM AI SCANNING ANIMATION */}
         {searchState === "scanning" && (
           <div className="bg-slate-950 border border-blue-500/40 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center min-h-[550px] text-white">
             
@@ -464,7 +614,7 @@ export default function Investigation() {
             {/* Animated Scanning Beam & Face Container */}
             <div className="relative w-56 h-56 rounded-3xl border-2 border-blue-500/60 overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.3)] mb-8 bg-slate-900">
               <img
-                src={previewUrl || selectedCriminal?.photo_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80"}
+                src={previewUrl || selectedCriminal?.photo_url || DEFAULT_CRIMINALS[0].photo_url}
                 alt="Scanning Target"
                 className="w-full h-full object-cover filter brightness-90 contrast-110"
               />
@@ -529,7 +679,7 @@ export default function Investigation() {
         )}
 
         {/* WORKFLOW VIEW 3: MATCH RESULT & FULL INTELLIGENCE DOSSIER PAGE */}
-        {searchState === "result" && selectedCriminal && (
+        {searchState === "result" && (
           <div className="space-y-6">
             
             {/* Top Match Result Notification Header Banner */}
@@ -546,14 +696,14 @@ export default function Investigation() {
                       <Check size={12} /> MATCH CONFIRMED
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 text-[10px] font-black uppercase tracking-wider">
-                      {selectedCriminal.wanted_status}
+                      {(selectedCriminal || DEFAULT_CRIMINALS[0]).wanted_status}
                     </span>
                   </div>
                   <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-                    {selectedCriminal.name}
+                    {(selectedCriminal || DEFAULT_CRIMINALS[0]).name}
                   </h2>
                   <p className="text-xs text-slate-300 font-medium mt-0.5">
-                    Alias: <span className="text-cyan-300 font-bold">{selectedCriminal.alias}</span> • ID: <span className="font-mono text-white">{selectedCriminal.criminal_id}</span>
+                    Alias: <span className="text-cyan-300 font-bold">{(selectedCriminal || DEFAULT_CRIMINALS[0]).alias}</span> • ID: <span className="font-mono text-white">{(selectedCriminal || DEFAULT_CRIMINALS[0]).criminal_id}</span>
                   </p>
                 </div>
               </div>
@@ -567,7 +717,7 @@ export default function Investigation() {
 
                 <div className="bg-slate-950/80 border border-slate-800 px-5 py-3 rounded-2xl text-center shadow-lg">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Risk Score</p>
-                  <p className="text-2xl font-black text-red-500">{selectedCriminal.risk_score} / 100</p>
+                  <p className="text-2xl font-black text-red-500">{(selectedCriminal || DEFAULT_CRIMINALS[0]).risk_score} / 100</p>
                 </div>
               </div>
             </div>
@@ -583,8 +733,8 @@ export default function Investigation() {
                   {/* Photo with Wanted Overlay */}
                   <div className="relative w-48 h-56 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl shrink-0">
                     <img
-                      src={previewUrl || selectedCriminal.photo_url}
-                      alt={selectedCriminal.name}
+                      src={previewUrl || (selectedCriminal || DEFAULT_CRIMINALS[0]).photo_url}
+                      alt={(selectedCriminal || DEFAULT_CRIMINALS[0]).name}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-3 left-3 bg-red-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded uppercase shadow-lg tracking-widest rotate-[-6deg]">
@@ -597,39 +747,39 @@ export default function Investigation() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                       <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                         <p className="text-[9px] text-slate-400 font-bold uppercase">Age / DOB</p>
-                        <p className="font-bold text-white">{selectedCriminal.age} Yrs ({selectedCriminal.dob})</p>
+                        <p className="font-bold text-white">{(selectedCriminal || DEFAULT_CRIMINALS[0]).age} Yrs ({(selectedCriminal || DEFAULT_CRIMINALS[0]).dob})</p>
                       </div>
 
                       <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                         <p className="text-[9px] text-slate-400 font-bold uppercase">District Unit</p>
-                        <p className="font-bold text-cyan-300">{selectedCriminal.district}</p>
+                        <p className="font-bold text-cyan-300">{(selectedCriminal || DEFAULT_CRIMINALS[0]).district}</p>
                       </div>
 
                       <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                         <p className="text-[9px] text-slate-400 font-bold uppercase">Police Station</p>
-                        <p className="font-bold text-white">{selectedCriminal.police_station}</p>
+                        <p className="font-bold text-white">{(selectedCriminal || DEFAULT_CRIMINALS[0]).police_station}</p>
                       </div>
 
                       <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                         <p className="text-[9px] text-slate-400 font-bold uppercase">Height / Weight</p>
-                        <p className="font-bold text-white">{selectedCriminal.height} • {selectedCriminal.weight}</p>
+                        <p className="font-bold text-white">{(selectedCriminal || DEFAULT_CRIMINALS[0]).height} • {(selectedCriminal || DEFAULT_CRIMINALS[0]).weight}</p>
                       </div>
 
                       <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                         <p className="text-[9px] text-slate-400 font-bold uppercase">Blood Group</p>
-                        <p className="font-bold text-rose-400">{selectedCriminal.blood_group}</p>
+                        <p className="font-bold text-rose-400">{(selectedCriminal || DEFAULT_CRIMINALS[0]).blood_group}</p>
                       </div>
 
                       <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                         <p className="text-[9px] text-slate-400 font-bold uppercase">Threat Rating</p>
-                        <p className="font-extrabold text-red-400">{selectedCriminal.threat_level}</p>
+                        <p className="font-extrabold text-red-400">{(selectedCriminal || DEFAULT_CRIMINALS[0]).threat_level}</p>
                       </div>
                     </div>
 
                     {/* Last Seen GPS Ticker */}
                     <div className="bg-blue-500/10 border border-blue-500/30 p-3 rounded-xl text-xs text-blue-300 flex items-center gap-2">
                       <MapPin size={16} className="text-cyan-400 shrink-0" />
-                      <span><strong>Last Reported GPS Location:</strong> {selectedCriminal.last_seen}</span>
+                      <span><strong>Last Reported GPS Location:</strong> {(selectedCriminal || DEFAULT_CRIMINALS[0]).last_seen}</span>
                     </div>
                   </div>
                 </div>
@@ -638,10 +788,10 @@ export default function Investigation() {
                 <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 p-1.5 rounded-2xl overflow-x-auto">
                   {[
                     { id: "overview", label: "Overview", icon: <FileText size={14} /> },
-                    { id: "cases", label: `Cases (${selectedCriminal.firs?.length || 0})`, icon: <FileSpreadsheet size={14} /> },
-                    { id: "evidence", label: `Evidence (${selectedCriminal.evidence_files?.length || 0})`, icon: <Layers size={14} /> },
+                    { id: "cases", label: `Cases (${(selectedCriminal || DEFAULT_CRIMINALS[0]).firs?.length || 0})`, icon: <FileSpreadsheet size={14} /> },
+                    { id: "evidence", label: `Evidence (${(selectedCriminal || DEFAULT_CRIMINALS[0]).evidence_files?.length || 0})`, icon: <Layers size={14} /> },
                     { id: "timeline", label: "Timeline", icon: <Clock size={14} /> },
-                    { id: "associates", label: `Associates (${selectedCriminal.associates?.length || 0})`, icon: <Users size={14} /> },
+                    { id: "associates", label: `Associates (${(selectedCriminal || DEFAULT_CRIMINALS[0]).associates?.length || 0})`, icon: <Users size={14} /> },
                     { id: "aireport", label: "AI Gemini Report", icon: <Sparkles size={14} /> },
                   ].map((tab) => (
                     <button
@@ -669,18 +819,18 @@ export default function Investigation() {
                     <div className="space-y-3 text-xs">
                       <div className="p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800">
                         <span className="font-bold text-slate-400">Identification Marks & Tattoos:</span>
-                        <p className="font-bold text-white mt-1">{selectedCriminal.identification_marks}</p>
+                        <p className="font-bold text-white mt-1">{(selectedCriminal || DEFAULT_CRIMINALS[0]).identification_marks}</p>
                       </div>
 
                       <div className="p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800">
                         <span className="font-bold text-slate-400">Registered Permanent Address:</span>
-                        <p className="font-bold text-white mt-1">{selectedCriminal.address}</p>
+                        <p className="font-bold text-white mt-1">{(selectedCriminal || DEFAULT_CRIMINALS[0]).address}</p>
                       </div>
 
                       <div className="p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800">
                         <span className="font-bold text-slate-400">Primary Offence Heads & Modus Operandi:</span>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {selectedCriminal.crime_types?.map((type) => (
+                          {(selectedCriminal || DEFAULT_CRIMINALS[0]).crime_types?.map((type) => (
                             <span key={type} className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-bold">
                               {type}
                             </span>
@@ -699,7 +849,7 @@ export default function Investigation() {
                     </h3>
 
                     <div className="grid grid-cols-1 gap-3">
-                      {selectedCriminal.firs?.map((fir) => (
+                      {(selectedCriminal || DEFAULT_CRIMINALS[0]).firs?.map((fir) => (
                         <div key={fir.fir_number} className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
                             <div className="flex items-center gap-2">
@@ -736,7 +886,7 @@ export default function Investigation() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedCriminal.evidence_files?.map((ev, idx) => (
+                      {(selectedCriminal || DEFAULT_CRIMINALS[0]).evidence_files?.map((ev, idx) => (
                         <div key={idx} className="bg-slate-950/80 border border-slate-800 rounded-2xl overflow-hidden shadow-lg group hover:border-blue-500/50 transition">
                           <div className="h-32 bg-slate-900 relative overflow-hidden">
                             <img src={ev.url} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -765,7 +915,7 @@ export default function Investigation() {
                     </h3>
 
                     <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
-                      {selectedCriminal.arrest_history?.map((item, idx) => (
+                      {(selectedCriminal || DEFAULT_CRIMINALS[0]).arrest_history?.map((item, idx) => (
                         <div key={idx} className="relative flex items-start gap-4">
                           <div className="absolute -left-6 top-1 w-4 h-4 rounded-full bg-blue-600 border-2 border-slate-900 shadow-md shadow-blue-500/50"></div>
                           <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-2xl flex-1">
@@ -791,7 +941,7 @@ export default function Investigation() {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {selectedCriminal.associates?.map((assoc, idx) => (
+                      {(selectedCriminal || DEFAULT_CRIMINALS[0]).associates?.map((assoc, idx) => (
                         <div key={idx} className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl flex items-center gap-3.5">
                           <img src={assoc.photo_url} alt={assoc.name} className="w-14 h-14 rounded-2xl object-cover border border-white/20 shrink-0" />
                           <div className="min-w-0">
@@ -897,7 +1047,7 @@ export default function Investigation() {
                   <div className="space-y-3 text-xs">
                     <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-400 font-bold">Total FIR Cases:</span>
-                      <strong className="text-white text-sm">{selectedCriminal.firs?.length || 0}</strong>
+                      <strong className="text-white text-sm">{(selectedCriminal || DEFAULT_CRIMINALS[0]).firs?.length || 0}</strong>
                     </div>
 
                     <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
@@ -907,22 +1057,22 @@ export default function Investigation() {
 
                     <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-400 font-bold">Known Associates:</span>
-                      <strong className="text-cyan-300 text-sm">{selectedCriminal.associates?.length || 0} Operatives</strong>
+                      <strong className="text-cyan-300 text-sm">{(selectedCriminal || DEFAULT_CRIMINALS[0]).associates?.length || 0} Operatives</strong>
                     </div>
 
                     <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-400 font-bold">Evidence Files Vault:</span>
-                      <strong className="text-emerald-400 text-sm">{selectedCriminal.evidence_files?.length || 0} Files</strong>
+                      <strong className="text-emerald-400 text-sm">{(selectedCriminal || DEFAULT_CRIMINALS[0]).evidence_files?.length || 0} Files</strong>
                     </div>
 
                     <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-400 font-bold">Vehicles Tagged:</span>
-                      <strong className="text-white text-sm">{selectedCriminal.vehicles?.length || 0}</strong>
+                      <strong className="text-white text-sm">{(selectedCriminal || DEFAULT_CRIMINALS[0]).vehicles?.length || 0}</strong>
                     </div>
 
                     <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
                       <span className="text-slate-400 font-bold">Weapons Recorded:</span>
-                      <strong className="text-amber-400 text-sm">{selectedCriminal.weapons?.length || 0}</strong>
+                      <strong className="text-amber-400 text-sm">{(selectedCriminal || DEFAULT_CRIMINALS[0]).weapons?.length || 0}</strong>
                     </div>
                   </div>
                 </div>
@@ -935,14 +1085,14 @@ export default function Investigation() {
                   </h3>
 
                   <div className="space-y-3 text-xs">
-                    {selectedCriminal.vehicles?.map((v, i) => (
+                    {(selectedCriminal || DEFAULT_CRIMINALS[0]).vehicles?.map((v, i) => (
                       <div key={i} className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
                         <p className="font-bold text-white">{v.model}</p>
                         <p className="text-[10px] text-cyan-300 mt-0.5">Reg: {v.reg_no} • Color: {v.color}</p>
                       </div>
                     ))}
 
-                    {selectedCriminal.weapons?.map((w, i) => (
+                    {(selectedCriminal || DEFAULT_CRIMINALS[0]).weapons?.map((w, i) => (
                       <div key={i} className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
                         <p className="font-bold text-red-400">{w.type}</p>
                         <p className="text-[10px] text-slate-400 mt-0.5">Caliber: {w.caliber} • Status: {w.status}</p>
@@ -958,7 +1108,7 @@ export default function Investigation() {
                   </h3>
 
                   <button
-                    onClick={() => alert(`Statewide Lookout Circular (LOC) issued for ${selectedCriminal.name}. Alert sent to all control rooms.`)}
+                    onClick={() => alert(`Statewide Lookout Circular (LOC) issued for ${(selectedCriminal || DEFAULT_CRIMINALS[0]).name}. Alert sent to all control rooms.`)}
                     className="w-full py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer border border-red-400/30"
                   >
                     <Radio size={16} />
@@ -966,7 +1116,7 @@ export default function Investigation() {
                   </button>
 
                   <button
-                    onClick={() => alert(`Cell Tower IMEI triangulation initiated for ${selectedCriminal.name}. Live location stream active.`)}
+                    onClick={() => alert(`Cell Tower IMEI triangulation initiated for ${(selectedCriminal || DEFAULT_CRIMINALS[0]).name}. Live location stream active.`)}
                     className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
                   >
                     <Phone size={16} />
