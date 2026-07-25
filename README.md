@@ -1,21 +1,62 @@
-# 🚔 KSP Intelligent Crime AI Platform
+# 🚔 KSP AI Investigation Platform
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.139.0-009688?logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-19.2.7-61DAFB?logo=react)](https://react.dev)
-[![Zoho Catalyst](https://img.shields.io/badge/Zoho_Catalyst-AppSail_%26_Hosting-007BE5)](https://catalyst.zoho.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Primary_OLTP-4169E1?logo=postgresql)](https://www.postgresql.org)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-8E44AD?logo=google)](https://ai.google.dev)
-
-An enterprise-grade, AI-powered Crime Intelligence and Investigation Support Platform developed for the **Karnataka State Police (KSP)**.
+> An AI-powered platform that helps Karnataka State Police streamline investigations, manage digital evidence and assist officers with intelligent case analysis.
 
 ---
 
-## 🌐 Live Production Deployments
+## 📌 Project Overview
 
-- **Frontend Application**: [https://police-tjrilmgj.onslate.in/](https://police-tjrilmgj.onslate.in/)
-- **Backend API Service (Render)**: [https://police-98i7.onrender.com](https://police-98i7.onrender.com)
-- **Interactive API Documentation (Swagger)**: [https://police-98i7.onrender.com/docs](https://police-98i7.onrender.com/docs)
-- **System Health Check**: [https://police-98i7.onrender.com/health](https://police-98i7.onrender.com/health)
+Criminal investigations often involve fragmented records, manual workflows, and delayed access to critical information. KSP AI Investigation Platform addresses these challenges by providing a centralized AI-powered solution for case management, digital evidence handling, intelligent investigation assistance, and secure role-based collaboration.
+
+Designed for the Karnataka State Police, the platform combines modern cloud technologies with AI to improve operational efficiency, enhance decision-making, and support faster investigations.
+
+---
+
+## 🌐 Live Demo
+
+| Service | Link |
+|----------|------|
+| 🚀 Frontend | https://police-tjrilmgj.onslate.in |
+| ⚙️ Backend API | https://police-98i7.onrender.com |
+| 📖 API Documentation | https://police-98i7.onrender.com/docs |
+| ❤️ Health Check | https://police-98i7.onrender.com/health |
+
+---
+
+## 🎥 Demo Video
+
+---
+
+## ✨ Key Features
+
+| Feature                        | Description                                                          |
+| ------------------------------ | -------------------------------------------------------------------- |
+| 🔐 Role-Based Authentication   | Secure login with permission-based access for different police ranks |
+| 🤖 AI Investigation Assistant  | Google Gemini powered chatbot for investigation support              |
+| 📂 Case Management             | Create, assign, and monitor investigations                           |
+| 📁 Digital Evidence Repository | Upload and organize investigation evidence                           |
+| 📊 Crime Analytics             | Interactive dashboards and crime insights                            |
+| 🔔 Real-Time Notifications     | Instant officer notifications                                        |
+| ☁️ Cloud Deployment            | Hosted using Render and Zoho Catalyst                                |
+
+---
+
+## 🛠 Technology Stack
+
+| Category | Technologies |
+|----------|--------------|
+| Frontend | React 19, Vite, Tailwind CSS |
+| Backend | FastAPI |
+| Database | PostgreSQL |
+| AI | Google Gemini 2.5 Flash |
+| Authentication | JWT, Zoho Catalyst |
+| Storage | Catalyst FileStore |
+| Deployment | Render, Zoho Catalyst |
+
+
+---
+
+## 👥 Team Responsibilities
 
 ---
 
@@ -45,9 +86,8 @@ An enterprise-grade, AI-powered Crime Intelligence and Investigation Support Pla
  └────────────────────┘   └───────────────────┘   └───────────────────┘   └───────────────────────────┘
 ```
 
----
 
-## 🔐 Role-Based Access Control (RBAC) & Permissions
+## 🔐 Role-Based Access Control & Permissions
 
 The platform enforces a 10-tier rank hierarchy with permission keys:
 
@@ -71,13 +111,14 @@ cd backend
 
 # Create & activate virtual environment
 python -m venv .venv
+
 .venv\Scripts\Activate.ps1   # On Windows
 # source .venv/bin/activate  # On Linux/macOS
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run database seeder (Populates 100 Officers, 500 FIRs, 300 Cases, 450 Accused, 900 Evidence)
+# Run database seeder 
 python scripts/seed_demo.py
 
 # Start local server
@@ -97,45 +138,50 @@ npm run dev
 
 ---
 
-## 🔑 Environment Variables Reference
+## ⚙️ Environment Configuration
 
-### Backend (`backend/.env`)
-```env
-PORT=8000
-FRONTEND_URL=https://police-tjrilmgj.onslate.in
-EXTRA_CORS_ORIGINS="https://police-tjrilmgj.onslate.in,http://localhost:5173"
-DATABASE_URL=postgresql://postgres:password@localhost:5432/ksp_crime_ai
-AI_PROVIDER=gemini
-GOOGLE_API_KEY=YOUR_GEMINI_API_KEY
-SECRET_KEY=YOUR_JWT_SECRET_KEY
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-```
+Create a `.env` file in the respective directories and configure the required environment variables.
 
-### Frontend (`frontend/.env`)
-```env
-VITE_API_URL=https://police-98i7.onrender.com
-```
+### Backend
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL database connection string |
+| `GOOGLE_API_KEY` | Google Gemini API key |
+| `SECRET_KEY` | JWT secret key |
+| `FRONTEND_URL` | Frontend application URL |
+
+### Frontend
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | Backend API base URL |
 
 ---
 
-## 📊 Demo Seeder Script (`backend/scripts/seed_demo.py`)
+## 📊 Demo Dataset
 
-Run the master seeder script to populate PostgreSQL and Catalyst DataStore/NoSQL collections with realistic Karnataka police records:
+The seeder generates realistic police records for development and testing.
+
+Run the seeder using:
 
 ```bash
 python backend/scripts/seed_demo.py
 ```
 
-**Seeded Data Quota:**
-- 10 Districts & 30 Police Stations
-- 100 Officers (Credentials: `admin@ksp.gov.in` / `Admin@123`, `officer1@ksp.gov.in` / `Officer@123`)
-- 500 FIRs & 300 Active/Solved Cases
-- 450 Accused Persons & Suspects
-- 900 Evidence Items (Images, Videos, Audio, PDFs)
-- 250 Victims & 200 Witnesses
-- 120 Chargesheets & 75 Court Orders
-- 50 Investigation Logs, 100 AI Conversations, 500 Notifications
+| Dataset | Count |
+|----------|------:|
+| Police Officers | 100 |
+| FIRs | 500 |
+| Cases | 300 |
+| Accused Records | 450 |
+| Evidence Files | 900 |
+| Victims | 250 |
+| Witnesses | 200 |
+| Chargesheets | 120 |
+| Court Orders | 75 |
+| Notifications | 500 |
+
 
 ---
 
@@ -153,3 +199,16 @@ python backend/scripts/seed_demo.py
 | `POST` | `/api/evidence/upload` | Catalyst File Store upload & automatic Zia OCR | `evidence` |
 | `POST` | `/api/ai/chat` | Gemini LLM conversation endpoint with streaming | `dashboard` |
 | `GET` | `/api/notifications` | Real-time notifications for active officer | `dashboard` |
+
+---
+
+## 🏆 Hackathon Submission
+
+From investigation to intelligence, this platform was developed to empower the **Karnataka State Police** with AI-driven insights, secure digital workflows, and smarter investigation capabilities.
+
+---
+
+> **Built with ❤️ for Hack2skill Datathon 2026**
+
+---
+
