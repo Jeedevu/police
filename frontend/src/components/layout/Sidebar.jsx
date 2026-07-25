@@ -48,7 +48,6 @@ export default function Sidebar({ isCollapsed, onToggle, isMobile = false }) {
     { key: "suspect_profiles", name: t("sidebar.suspect_profiles", "Suspect Profiles"), icon: <UserSquare2 size={19} />, path: "/profile", permission: "cases", accent: "#F59E0B" },
     { key: "evidence_vault", name: t("sidebar.evidence_vault", "Evidence Vault"), icon: <Layers size={19} />, path: "/evidence", permission: "evidence" },
     { key: "officers_mgmt", name: t("sidebar.officers_mgmt", "Officers Management"), icon: <Users size={19} />, path: "/officers", permission: "users", accent: "#2563EB" },
-    { key: "threat_matrix", name: t("sidebar.threat_matrix", "Threat Matrix"), icon: <AlertOctagon size={19} />, path: "/analytics?tab=predictions", permission: "analytics", accent: "#EF4444" },
   ];
 
   // Dynamic Filtering based on User Role & Permissions
